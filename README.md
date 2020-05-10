@@ -1,2 +1,2 @@
 # vavacancy-bot
-telegram bot for 
+telegram bot for vacancies

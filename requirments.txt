@@ -1,0 +1,7 @@
+python-telegram-bot
+numpy
+scikit-learn
+json
+string
+difflib
+telegram

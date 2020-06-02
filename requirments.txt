@@ -3,5 +3,10 @@ numpy
 scikit-learn
 json
 string
-difflib
 telegram
+nltk
+pymorphy2
+gensim
+six
+scipy
+psycopg2

@@ -1,0 +1,14 @@
+python-telegram-bot
+numpy
+scikit-learn
+json
+string
+telegram
+nltk
+pymorphy2
+gensim
+six
+scipy
+psycopg2
+beautifulsoup4
+urllib

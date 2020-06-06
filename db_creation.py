@@ -1,14 +1,14 @@
 import psycopg2
-import json
 
-# считываем конфиг
-with open('config.json') as f:
-    config = json.loads(f.read())
-    PASSWORD = config["PASSWORD"]
-    DBNAME = config["DBNAME"]
-    USER = config["USER"]
-    HOST = config["HOST"]
-    PORT = config["PORT"]
+import create_environment
+from os import getenv
+
+DBNAME = getenv("DBNAME")
+USER = getenv("USER")
+PASSWORD = getenv("PASSWORD")
+PORT = getenv("PORT")
+HOST = getenv("HOST")
+
 # Первое создание базы данных
 '''
 Первое создание базы данных.

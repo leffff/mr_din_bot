@@ -1,0 +1,12 @@
+python-dotenv
+sklearn
+six
+gensim
+psycopg2
+nltk
+numpy
+scipy
+requests
+python-telegram-bot
+pymorphy2
+string

@@ -50,9 +50,9 @@ def first_db_creation():
                                "cancellation VARCHAR(30),"
                                "result INT,"
                                "active_orders INT)")
+                conn.commit()
+                return {"status": "ok"}
     except Exception as ex:
         return {"status": f"unknown error: {ex.args[0]}"}
-    else:
-        return {"status": "ok"}
     finally:
         conn.close()

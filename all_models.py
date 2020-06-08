@@ -1,5 +1,5 @@
 import psycopg2
-import create_environment
+from create_environment import create_environment
 from os import getenv
 
 DBNAME = getenv("DBNAME")
@@ -9,7 +9,16 @@ PORT = getenv("PORT")
 HOST = getenv("HOST")
 
 
+# Класс для взаимодействия с пользователями
 class User:
+    '''
+    Инициализация объекта класса и проверка есть ли пользователь с данным tg_id в базе данных
+    На выход:
+    {"status": "ok"}
+    {"status": "user not found"}
+    {"status": unknown error}
+    '''
+
     def get_from_tg_id(self, tg_id: int) -> dict:
         try:
             with psycopg2.connect(dbname=DBNAME, user=USER,
@@ -27,8 +36,9 @@ class User:
         finally:
             conn.close()
 
-    # добавление нового пользователя
-    '''входной словарь: 
+    '''
+    Добавление нового пользователя
+    входной словарь: 
     {"tg_nickname": "str(30)",
     "tg_id: int" 
     "name": "str(30)", 
@@ -40,8 +50,7 @@ class User:
 
     На выход:
      {"status": "ok"}
-    {"status": wrong type}
-    {'status': error_type}
+    {"status": error("invalid type for {e. g. tg_nickname}", unknown)}
     '''
 
     @staticmethod
@@ -82,8 +91,8 @@ class User:
     Функция для поиска пользователя по id.
     На выход:
     {"status": "ok", "output": User()}
-    {"status": "users not found"}
-    {'status': error_type}
+    {"status": "user not found"}
+    {'status': error("invalid type for user_id", unknown)}
     '''
 
     @staticmethod
@@ -92,13 +101,13 @@ class User:
             with psycopg2.connect(dbname=DBNAME, user=USER,
                                   password=PASSWORD, host=HOST, port=PORT) as conn:
                 with conn.cursor() as cursor:
-                    assert type(user_id) == int, f"invalid type for qualification, expected int got {type(user_id)}"
+                    assert type(user_id) == int, "invalid type for user_id"
                     cursor.execute(f'SELECT tg_id FROM users WHERE user_id = %s', (user_id,))
-                    id = cursor.fetchone()
-                    if id:
+                    tg_id = cursor.fetchone()
+                    if tg_id:
                         conn.commit()
                         user = User()
-                        user.get_from_tg_id(id)
+                        user.get_from_tg_id(tg_id)
                         return {"status": "ok", "output": user}
                     return {"status": "user not found"}
         except Exception as ex:
@@ -106,7 +115,13 @@ class User:
         finally:
             conn.close()
 
-    # Функция для получения name и surname пользователя
+    '''
+    получение name и surname пользователя
+    На выход:
+    {'status': "ok", "out": out}
+    {"status": "error in query, result = False"}
+    {'status': unknown error}
+    '''
     def get_name_surname(self) -> dict:
         try:
             with psycopg2.connect(dbname=DBNAME, user=USER,
@@ -123,7 +138,13 @@ class User:
         finally:
             conn.close()
 
-    # Функция для получения qualification пользователя
+    '''
+    получение qualification пользователя
+    На выход:
+    {'status': "ok", "out": out}
+    {"status": "error in query, result = False"}
+    {'status': unknown error}
+    '''
     def get_qualification(self) -> dict:
         try:
             with psycopg2.connect(dbname=DBNAME, user=USER,
@@ -141,7 +162,38 @@ class User:
         finally:
             conn.close()
 
-    # Функция для получения tg_nickname пользователя
+    '''
+        получение city пользователя
+        На выход:
+        {'status': "ok", "out": out}
+        {"status": "error in query, result = False"}
+        {'status': unknown error}
+    '''
+
+    def get_city(self) -> dict:
+        try:
+            with psycopg2.connect(dbname=DBNAME, user=USER,
+                                  password=PASSWORD, host=HOST, port=PORT) as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT city FROM users WHERE tg_id = %s", (self.tg_id,))
+                    out = cursor.fetchone()
+                    if out:
+                        conn.commit()
+                        return {"status": "ok", "out": out[0]}
+                    return {"status": "error in query, result = False"}
+
+        except Exception as ex:
+            return {"status": ex.args[0]}
+        finally:
+            conn.close()
+
+    '''
+    Получение tg_nickname пользователя
+    На выход:
+    {'status': "ok", "out": out}
+    {"status": "error in query, result = False"}
+    {'status': unknown error}
+    '''
     def get_tg_nickname(self) -> dict:
         try:
             with psycopg2.connect(dbname=DBNAME, user=USER,
@@ -159,7 +211,13 @@ class User:
         finally:
             conn.close()
 
-    # Функция для получения qualities пользователя
+    '''
+    Получение qualities пользователя
+    На выход:
+    {'status': "ok", "out": out}
+    {"status": "error in query, result = False"}
+    {'status': unknown error}
+    '''
     def get_qualities(self) -> dict:
         try:
             with psycopg2.connect(dbname=DBNAME, user=USER,
@@ -177,7 +235,13 @@ class User:
         finally:
             conn.close()
 
-    # Функция для получения experience пользователя
+    '''
+    Получение experience пользователя
+    На выход:
+    {'status': "ok", "out": out}
+    {"status": "error in query, result = False"}
+    {'status': unknown error}
+    '''
     def get_experience(self) -> dict:
         try:
             with psycopg2.connect(dbname=DBNAME, user=USER,
@@ -194,7 +258,13 @@ class User:
         finally:
             conn.close()
 
-    # Функция для получения id пользователя
+    '''
+    Получение user_id пользователя
+    На выход:
+    {'status': "ok", "out": out}
+    {"status": "error in query, result = False"}
+    {'status': unknown error}
+    '''
     def get_user_id(self) -> dict:
         try:
             with psycopg2.connect(dbname=DBNAME, user=USER,
@@ -214,8 +284,9 @@ class User:
     '''
     Функция для получения списка классов всех пользователей.
     На выход:
-    {"status": "ok", "output": tuple(User(), User()...)}
+    {"status": "ok", "out": tuple(User(), User()...)}
     {"status": "no users in database"}
+    {'status': unknown error}
     '''
 
     @staticmethod
@@ -224,7 +295,7 @@ class User:
             with psycopg2.connect(dbname=DBNAME, user=USER,
                                   password=PASSWORD, host=HOST, port=PORT) as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("SELECT tg_id FROM users")
+                    cursor.execute("SELECT tg_id FROM users WHERE qualification != 'работодатель'")
                     out = cursor.fetchall()
                     if out:
                         conn.commit()
@@ -233,6 +304,7 @@ class User:
                             user = User()
                             user.get_from_tg_id(tg_id)
                             data.append(user)
+                        conn.commit()
                         return {"status": "ok", "out": tuple(data)}
                     return {"status": "no users in database"}
         except Exception as ex:
@@ -245,6 +317,7 @@ class User:
     На выход:
     {"status": "ok", "out": tuple(data)}
     {"status": "no works found"}
+    {'status': unknown error}
     '''
 
     def watch_my_works(self) -> dict:
@@ -276,6 +349,7 @@ class User:
     На выход:
     {"status": "ok", "out": tuple(Order(), Order()...)}
     {"status": "no orders found"}
+    {'status': unknown error}
     '''
 
     def watch_my_orders(self) -> dict:
@@ -305,19 +379,19 @@ class User:
 
 class Order:
     '''
-        Проверка title
-        На выход:
-        {"status": "ok"}
-        {"status": "order not found"}
-        {"status": wrong type}
-        '''
+    Инициализаци и Проверка title
+    На выход:
+    {"status": "ok"}
+    {"status": "order not found"}
+    {"status": error("invalid type for title"), unknown}
+    '''
 
     def get_by_title(self, title: str) -> dict:
         try:
             with psycopg2.connect(dbname=DBNAME, user=USER,
                                   password=PASSWORD, host=HOST, port=PORT) as conn:
                 with conn.cursor() as cursor:
-                    assert type(title) == str, f"invalid type for title, expected str got {type(title)}"
+                    assert type(title) == str, "invalid type for title"
                     cursor.execute("SELECT order_id FROM orders WHERE title = %s", (title,))
                     if cursor.fetchone():
                         conn.commit()
@@ -329,8 +403,9 @@ class Order:
         finally:
             conn.close()
 
-    # Добавление нового заказа
-    '''Входной словарь:
+    '''
+    Добавление нового заказа
+    Входной словарь:
     {"employer_id": int,
     "title": "str(40),
     "description": "str",
@@ -449,7 +524,7 @@ class Order:
         На выход:
         {"status": "ok", "out": out}
         {"status": unknown error}
-        {"status": "error in query, result = False"}
+        {"status": "order hasn't started yet"}
         '''
 
     def get_start_time(self) -> dict:
@@ -462,7 +537,7 @@ class Order:
                     if out:
                         conn.commit()
                         return {"status": "ok", "out": out[0]}
-                    return {"status": "error in query, result = False"}
+                    return {"status": "order hasn't started yet"}
         except Exception as ex:
             return {'status': ex.args[0]}
         finally:
@@ -574,6 +649,7 @@ class Order:
                     cursor.execute("SELECT COUNT(active) WHERE worker_id = %s",
                                    (worker_id,))
                     active_num = cursor.fetchone()[0]
+                    conn.commit()
                     return active_num
         except Exception as ex:
             return ex.args[0]
@@ -584,8 +660,7 @@ class Order:
     Функция для отмены заказа.
     На выход:
     {'status': "ok"}
-    {'status': wrong type}
-    {'status': unknown error}
+    {'status': error("invalid type for cancellation_type", "invalid type for finish_time", unknown)}
     '''
 
     def set_cancellation(self, cancellation_type: str, finish_time: int) -> dict:
@@ -593,7 +668,7 @@ class Order:
             with psycopg2.connect(dbname=DBNAME, user=USER,
                                   password=PASSWORD, host=HOST, port=PORT) as conn:
                 with conn.cursor() as cursor:
-                    assert type(cancellation_type) == str, f"invalid type for cancellation_type"
+                    assert type(cancellation_type) == str, "invalid type for cancellation_type"
                     assert type(finish_time) == int, "invalid type for finish_time"
                     cursor.execute("UPDATE orders SET cancellation = %s WHERE title = %s",
                                    (cancellation_type, self.title))
@@ -611,6 +686,7 @@ class Order:
                                    (active_orders, self.title))
                     cursor.execute("UPDATE orders SET active = %s WHERE title = %s", (False, self.title))
                     cursor.execute("UPDATE orders SET finish_time = %s WHERE title = %s", (finish_time, self.title))
+                    conn.commit()
                     return {'status': "ok"}
         except Exception as ex:
             return {'status': ex.args[0]}
@@ -621,7 +697,7 @@ class Order:
        Функция для успешного завершения заказа.
        На выход:
        {'status': "ok"}
-       {'status': unknown error}
+       {'status': error("invalid type for finish_time", unknown)}
        '''
 
     def set_done(self, finish_time: int) -> dict:
@@ -629,7 +705,7 @@ class Order:
             with psycopg2.connect(dbname=DBNAME, user=USER,
                                   password=PASSWORD, host=HOST, port=PORT) as conn:
                 with conn.cursor() as cursor:
-                    assert type(finish_time) == int, f"invalid type for finish_time"
+                    assert type(finish_time) == int, "invalid type for finish_time"
                     cursor.execute("UPDATE orders SET done = %s WHERE title = %s",
                                    (True, self.title))
                     cursor.execute("UPDATE orders SET result = 1 WHERE title = %s",
@@ -645,6 +721,7 @@ class Order:
                                    (active_orders, self.title))
                     cursor.execute("UPDATE orders SET active = %s WHERE title = %s", (False, self.title))
                     cursor.execute("UPDATE orders SET finish_time = %s WHERE title = %s", (finish_time, self.title))
+                    conn.commit()
                     return {'status': 'ok'}
         except Exception as ex:
             return {'status': ex.args[0]}
@@ -669,6 +746,7 @@ class Order:
                     payment = self.get_payment()["out"]
                     assert result is None or active_orders is None, "order is not finished"
                     out = (result, active_orders, payment)
+                    conn.commit()
                     return {"result": "ok", "out": out}
         except Exception as ex:
             return {'status': ex.args[0]}
@@ -691,6 +769,7 @@ class Order:
                     assert type(mark) == int, "invalid type for mark"
                     cursor.execute("UPDATE orders SET feedback = %s, mark = %s WHERE title = %s",
                                    (feedback, mark, self.title))
+                    conn.commit()
                     return {"result": "ok"}
         except Exception as ex:
             return {'status': ex.args[0]}
@@ -713,8 +792,40 @@ class Order:
                     assert type(start_time) == int, "invalid type for start_time"
                     cursor.execute("UPDATE orders SET worker_id = %s, start_time = %s WHERE title = %s",
                                    (worker_id, start_time, self.title))
+                    conn.commit()
                     return {"result": "ok"}
         except Exception as ex:
             return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
+    '''
+        Функция для получения списка классов всех заказов.
+        На выход:
+        {"status": "ok", "out": tuple(Order(), Order()...)}
+        {"status": "no orders in database"}
+        {'status': unknown error}
+        '''
+
+    @staticmethod
+    def get_all_orders() -> dict:
+        try:
+            with psycopg2.connect(dbname=DBNAME, user=USER,
+                                  password=PASSWORD, host=HOST, port=PORT) as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT title FROM orders")
+                    out = cursor.fetchall()
+                    if out:
+                        conn.commit()
+                        data = list()
+                        for title in out:
+                            order = Order()
+                            order.get_by_title(title)
+                            data.append(order)
+                        conn.commit()
+                        return {"status": "ok", "out": tuple(data)}
+                    return {"status": "no orders in database"}
+        except Exception as ex:
+            return {"status": ex.args[0]}
         finally:
             conn.close()

@@ -8,3 +8,4 @@ numpy
 scipy
 requests
 pymorphy2
+pyTelegramBotAPI

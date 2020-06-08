@@ -1,17 +1,22 @@
-from telegram import ReplyKeyboardMarkup
-from telegram.ext import Updater, MessageHandler, Filters
-from telegram.ext import CallbackContext, CommandHandler
-import create_environment
+from telebot import types, apihelper
+import telebot
+from create_environment import create_environment
 from os import getenv
+
+# from db_creation import first_db_creation
+# from all_models import User
 from swear_words import russian_swear_words
 from russian_word_db import RussianDataset
 
+# first_db_creation()
+create_environment()
 rd = RussianDataset()
 rd.download()
 
 swearing = russian_swear_words()
 
 TOKEN = getenv("TOKEN")
+print(TOKEN)
 PROXY = getenv("PROXY")
 DBNAME = getenv("DBNAME")
 USER = getenv("USER")
@@ -19,79 +24,89 @@ PASSWORD = getenv("PASSWORD")
 PORT = getenv("PORT")
 HOST = getenv("HOST")
 
-REQUEST_KWARGS = {
-    "proxy_url": PROXY  # Адрес прокси сервера
+apihelper.proxy = {
+    'https': "socks5://167.172.55.204:1080"
 }
 
+status = {"tg_id": 0,
+          "tg_nickname": "",
+          "name": "",
+          "surname": "",
+          "qualification": "",
+          "qualities": "",
+          "experience": 0,
+          "city": ""}
 
-def start(update, context):  # начало работы бота с клиентом
-    update.message.reply_text(f"Вас приветствует Job Bot!\n советуем ознакомиться с /help")
-
-
-def echo(update, context):  # функция эхо нужна для теста связи с ботом
-    print(update.message.text)
-    print(
-        update.message.from_user.id,
-        update.message.from_user.first_name,
-        update.message.from_user.last_name,
-        update.message.from_user.username
-    )
-    update.message.reply_text(f"Я получил сообщение {update.message.text}")
+bot = telebot.TeleBot(TOKEN)
 
 
-def help(update, context):  # help поможет в будущем пользователю разобраться с возможностями бота
-    update.message.reply_text(f"Пока что, я ничего не умею, но скоро всему научусь)")
-    # если тг ник есть в базе, то предлагать фичи внктри
-    # если тг ника нет в базе то предлагать /register
-    reply_keyboard = [["/register"]]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False)
-    update.message.reply_text("Пока что, я ничего не умею, но скоро всему научусь)", reply_markup=markup)
+@bot.message_handler(commands=['echo'])
+def echo(message):
+    ref_user = message.text
+    print(message.from_user)
+    bot.send_message(message.from_user.id, ref_user + " Связь с ботом установлена :)")
 
 
-def register(update, context):  # регистрация
-    update.message.reply_text("Давайте зарегистрируемся!")
+@bot.message_handler(commands=['start'])
+def startMessage(message):
+    bot.send_message(message.from_user.id, "Здравствуйте!\nЯ Vavacancy Bot, ваш личный помощник на рынке труда\nЧтобы ознакомиться с моим функционалом воспользуйтесь /help")
 
 
-def find_work(update, context):  # поиск работы
-    update.message.reply_text("Давайте найдём предложения!")
+@bot.message_handler(commands=['help'])
+def startMessage(message):
+    id = message.from_user.id
+    # user = User()
+    # status = user.get_from_tg_id(id)
+    print(status)
+    bot.send_message(message.from_user.id,
+                     "Я пока что ничего не умею, уж простите, но скоро навигация будет доступна")
+
+    # if status == "user not found":
+    #     bot.send_message(message.from_user.id, "Я много чего умею, но сначала Вам нужно зарегистрироваться!\nДля этог воспользуйтесть /register")
+    # if status == "ok":
+    #     bot.send_message(message.from_user.id, "/find_work\n/post_order\n/find_worker\n/view_tasks\nview_orders")
 
 
-def post_order(update, context):  # создание заказа
-    update.message.reply_text("Давайте опубликуем заказ!!")
+# @bot.message_handler(commands=['register'])
+# def startMessage(message):
+#     global status
+#     status["tg_id"] = message.from_user.id
+#     status["tg_nickname"] = message.from_user.username
+#     status["name"] = message.from_user.name
+#     status["surname"] = message.from_user.surname
+#
+#     print(status)
+#
+#
+# @bot.message_handler(content_types=["text"])
+# def buttons(message):
+#     if message.text.lower() == "котики":
+#         doc = open('котята.jpg', 'rb')
+#         bot.send_photo(message.chat.id, doc, 'Какие красивые котята.')
+#     elif message.text.lower() == "щенки":
+#         doc = open('щенки.jpg', 'rb')
+#         bot.send_photo(message.chat.id, doc, 'Какие красивые щенки.')
+#     elif message.text == "Как дела?":
+#         bot.send_message(message.chat.id, "Я - бот, у меня нет настроения.")
+#     else:
+#         keyboard = types.InlineKeyboardMarkup(True)
+#         keyboard.add(types.InlineKeyboardButton("Котики", callback_data="kittens"),
+#                      types.InlineKeyboardButton("Щенки", callback_data="puppies"))
+#         bot.send_message(message.chat.id, "Управление ботом.", reply_markup=keyboard)
+#
+#
+# @bot.callback_query_handler(func=lambda call: True)
+# def callbackButtons(call):
+#     if call.data[:7] == 'kittens':
+#         doc = open('котята.jpg', 'rb')
+#         bot.send_photo(call.message.chat.id, doc, 'Какие красивые котята. Только с колбэком')
+#     if call.data[:7] == 'puppies':
+#         doc = open('щенки.jpg', 'rb')
+#         bot.send_photo(call.message.chat.id, doc, 'Какие красивые щенки. Только с колбэком')
 
+bot.polling(none_stop=True, timeout=123)
 
-def find_worker(update, context):  # посик работников
-    update.message.reply_text("Давайте найдём работника!")
-
-
-def view_tasks(update, context):  # просмотр своих выполняемых заданий
-    update.message.reply_text("Просмотр заказов для выполнения")
-
-
-def view_orders(update, context):  # создвние своих заказов
-    update.message.reply_text("Просмотр своих заказов")
-
-
-def main():
-    # создаём апдейтер добавляя туда токен бота
-    updater = Updater(TOKEN, use_context=True,
-                      request_kwargs=REQUEST_KWARGS)
-    dp = updater.dispatcher
-
-    # отключенныя функция эхо
-    dp.add_handler(CommandHandler("start", start))  # подключение функции старт
-    dp.add_handler(CommandHandler("help", help))  # подключение функции help
-    dp.add_handler(CommandHandler("register", register))
-    dp.add_handler(CommandHandler("find_work", find_work))
-    dp.add_handler(CommandHandler("post_order", post_order))
-    dp.add_handler(CommandHandler("find_worker", find_worker))
-    dp.add_handler(CommandHandler("view_tasks", view_tasks))
-    dp.add_handler(CommandHandler("view_orders", view_orders))
-
-    updater.start_polling()
-
-    updater.idle()
-
-
-if __name__ == '__main__':
-    main()
+# try:
+#     bot.infinity_polling(True)
+# except Exception as e:
+#     print(e)

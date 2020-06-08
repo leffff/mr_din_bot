@@ -1,7 +1,9 @@
 import psycopg2
 
-import create_environment
+from create_environment import create_environment
 from os import getenv
+
+create_environment()
 
 DBNAME = getenv("DBNAME")
 USER = getenv("USER")

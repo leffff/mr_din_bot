@@ -2,6 +2,8 @@ import psycopg2
 from create_environment import create_environment
 from os import getenv
 
+create_environment()
+
 DBNAME = getenv("DBNAME")
 USER = getenv("USER")
 PASSWORD = getenv("PASSWORD")
@@ -47,7 +49,6 @@ class User:
     "qualities": "str, str",
     "experience": "int",
     "city": "str(30)"}
-
     На выход:
      {"status": "ok"}
     {"status": error("invalid type for {e. g. tg_nickname}", unknown)}
@@ -411,7 +412,6 @@ class Order:
     "description": "str",
     "payment": float,
     "category": "str(30)"}
-
     На выход:
     {"status": "ok"}
     {"status": "order with this title already exists"}

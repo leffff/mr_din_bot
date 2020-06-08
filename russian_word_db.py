@@ -1,4 +1,4 @@
-from os import getcwd, mkdir
+from os import getcwd, mkdir, listdir
 import requests
 
 
@@ -49,9 +49,10 @@ class RussianDataset:
         self.__download_file_from_google_drive(file_id, destination)
 
     def download(self):
-        self.create_directory()
-        self.__download_russian_database()
-        self.__download_vectorized()
+        if 'ml' not in listdir(getcwd()):
+            self.create_directory()
+            self.__download_russian_database()
+            self.__download_vectorized()
 
 # d = RussianDataset()
 # d.download()

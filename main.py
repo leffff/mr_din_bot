@@ -1,4 +1,3 @@
-from telebot import types, apihelper
 import telebot
 from create_environment import create_environment
 from os import getenv
@@ -23,10 +22,10 @@ USER = getenv("USER")
 PASSWORD = getenv("PASSWORD")
 PORT = getenv("PORT")
 HOST = getenv("HOST")
-
-apihelper.proxy = {
-    'https': "socks5://167.172.55.204:1080"
-}
+#
+# apihelper.proxy = {
+#     'https': "socks5://167.172.55.204:1080"
+# }
 
 status = {"tg_id": 0,
           "tg_nickname": "",
@@ -104,7 +103,7 @@ def startMessage(message):
 #         doc = open('щенки.jpg', 'rb')
 #         bot.send_photo(call.message.chat.id, doc, 'Какие красивые щенки. Только с колбэком')
 
-bot.polling(none_stop=True, timeout=123)
+bot.polling()
 
 # try:
 #     bot.infinity_polling(True)

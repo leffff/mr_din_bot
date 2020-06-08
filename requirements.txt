@@ -8,4 +8,3 @@ numpy
 scipy
 requests
 pymorphy2
-string

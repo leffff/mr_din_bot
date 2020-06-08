@@ -22,7 +22,7 @@ USER = getenv("USER")
 PASSWORD = getenv("PASSWORD")
 PORT = getenv("PORT")
 HOST = getenv("HOST")
-#
+
 # apihelper.proxy = {
 #     'https': "socks5://167.172.55.204:1080"
 # }
@@ -103,9 +103,10 @@ def startMessage(message):
 #         doc = open('щенки.jpg', 'rb')
 #         bot.send_photo(call.message.chat.id, doc, 'Какие красивые щенки. Только с колбэком')
 
-bot.polling()
-
-# try:
-#     bot.infinity_polling(True)
-# except Exception as e:
-#     print(e)
+if __name__ == '__main__':
+    while True:
+        try:
+            bot.polling(none_stop=True)
+        except Exception as e:
+            bot.stop_bot()
+            print("RESTARTING BOT")

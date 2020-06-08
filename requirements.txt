@@ -9,3 +9,5 @@ scipy
 requests
 pymorphy2
 pyTelegramBotAPI
+bs4
+urllib

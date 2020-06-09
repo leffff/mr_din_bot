@@ -1,13 +1,18 @@
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
 from string import punctuation
+import requests
 
 
 def russian_swear_words() -> set:
+    URL = 'http://www.russki-mat.net/e/mat_slovar.htm'
+    page = requests.get(URL)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    results = soup.find_all(class_='lem')
+
     translator = str.maketrans({elem: None for elem in punctuation + '—1234567890'})
     res = set()
-    bs = BeautifulSoup(urlopen('http://www.russki-mat.net/e/mat_slovar.htm').read(), features="lxml")
-    for swear in bs.find_all('span', attrs={'class': 'lem'}):
+
+    for swear in results:
         words = swear.text.split()
         if len(words) == 1:
             res.add(words[0].translate(translator).lower())

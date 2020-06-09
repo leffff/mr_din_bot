@@ -2,7 +2,7 @@ python-dotenv
 sklearn
 six
 gensim
-psycopg2
+sqlite3
 nltk
 numpy
 scipy

@@ -35,18 +35,19 @@ class RussianDataset:
     def create_directory():
         path = getcwd() + "/ml"
         mkdir(path)
+        print(path, "ADDED")
 
     def __download_russian_database(self):
         file_id = '1ftHaSvFz50n7ly5Z-RuyY9_U3qVcWk7G'
         destination = getcwd() + "/ml/russian_database"
-        print(destination)
         self.__download_file_from_google_drive(file_id, destination)
+        print(destination, "ADDED")
 
     def __download_vectorized(self):
         file_id = '104_r57hNblE0hsop2G_T_LBklAl1tBX8'
         destination = getcwd() + "/ml/russian_database.vectors.npy"
-        print(destination)
         self.__download_file_from_google_drive(file_id, destination)
+        print(destination, "ADDED")
 
     def download(self):
         if 'ml' not in listdir(getcwd()):

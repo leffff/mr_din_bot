@@ -21,6 +21,7 @@ def first_db_creation():
     try:
         with sqlite3.connect(DBNAME) as conn:
             cursor = conn.cursor()
+
             cursor.execute("CREATE TABLE users ("
                            "user_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
                            "tg_nickname VARCHAR(30) NOT NULL UNIQUE, "
@@ -31,6 +32,7 @@ def first_db_creation():
                            "experience INT NOT NULL, "
                            "qualities text NOT NULL,"
                            "city VARCHAR(30) NOT NULL);")
+
             cursor.execute("CREATE TABLE orders ("
                            "order_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
                            "employer_id INTEGER REFERENCES users(user_id) NOT NULL,"

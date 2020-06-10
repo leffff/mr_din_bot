@@ -8,12 +8,11 @@ def russian_swear_words() -> set:
     page = requests.get(URL)
     soup = BeautifulSoup(page.content, 'html.parser')
     results = soup.find_all(class_='lem')
-
     translator = str.maketrans({elem: None for elem in punctuation + '—1234567890'})
     res = set()
 
-    for swear in results:
-        words = swear.text.split()
+    for i in range(0, 116):
+        words = results[i].text.split()
         if len(words) == 1:
             res.add(words[0].translate(translator).lower())
     return res

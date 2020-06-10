@@ -50,6 +50,7 @@ class User:
          {"status": "ok"}
         {"status": error("invalid type for {e. g. tg_nickname}", unknown)}
         """
+
         tg_nickname = user_data["tg_nickname"]
         tg_id = user_data["tg_id"]
         name = user_data["name"]
@@ -58,6 +59,7 @@ class User:
         experience = user_data["experience"]
         qualities = user_data["qualities"]
         city = user_data["city"]
+
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()

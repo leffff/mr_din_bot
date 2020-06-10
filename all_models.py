@@ -107,9 +107,9 @@ class User:
         finally:
             conn.close()
 
-    def get_name_surname(self) -> dict:
+    def get_name(self) -> dict:
         """
-        получение name и surname пользователя
+        получение name пользователя
         На выход:
         {'status': "ok", "out": out}
         {"status": "error in query, result = False"}
@@ -118,8 +118,30 @@ class User:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT name, surname FROM users WHERE tg_id = ?", (self.tg_id,))
-                out = cursor.fetchone()
+                cursor.execute("SELECT name FROM users WHERE tg_id = ?", (self.tg_id,))
+                out = cursor.fetchone()[0]
+                if out:
+                    conn.commit()
+                    return {'status': "ok", "out": out}
+                return {"status": "error in query, result = False"}
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
+    def get_surname(self) -> dict:
+        """
+        получение surname пользователя
+        На выход:
+        {'status': "ok", "out": out}
+        {"status": "error in query, result = False"}
+        {'status': unknown error}
+        """
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT surname FROM users WHERE tg_id = ?", (self.tg_id,))
+                out = cursor.fetchone()[0]
                 if out:
                     conn.commit()
                     return {'status': "ok", "out": out}

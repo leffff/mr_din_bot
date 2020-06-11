@@ -9,6 +9,7 @@ from db_creation import first_db_creation
 from all_models import User, Order
 from swear_words import russian_swear_words
 from russian_word_db import RussianDataset
+from ml_methods import activity_payment_rating, meaning_rating
 
 create_environment()
 
@@ -25,11 +26,7 @@ rd.download()
 
 bot = telebot.TeleBot(TOKEN)
 
-employer_flag = False
-mixed_flag = False
-create_order = False
-find_worker = False
-find_work = False
+employer_flag, mixed_flag, create_order, find_worker, find_work = False, False, False, False, False
 
 
 @bot.message_handler(commands=['echo'])
@@ -271,16 +268,19 @@ def registration_reply(message):
     if len(sentence) == 3 or len(sentence) == 6:
         if status == "user not found":
             global employer_flag, mixed_flag
-
-            registration = {"tg_id": message.from_user.id, "tg_nickname": message.from_user.username,
-                            "name": sentence[0] if sentence[0].isalpha() else None,
-                            "surname": sentence[1] if sentence[0].isalpha() else None,
-                            "city": sentence[2] if sentence[0].isalpha() else None}
+            start_date = 0
+            registration = {"tg_id": message.from_user.id, "tg_nickname": message.from_user.username}
+            if not sentence[0].isalpha():
+                return "Имя должно состоять только из букв"
+            if not sentence[1].isalpha():
+                return "Фамилия должна состоять только из букв"
+            if not sentence[2].isalpha():
+                return "Название города должно состоять только из букв"
 
             if employer_flag:
                 registration["qualification"] = "работодатель"
                 registration["qualities"] = "работодатель"
-                registration["experience"] = 0
+                start_date = 1960
 
             elif mixed_flag:
                 registration["qualification"] = sentence[3]
@@ -288,30 +288,19 @@ def registration_reply(message):
 
                 start_date = sentence[5]
                 if len(start_date) == 4 and start_date.isdigit():
-                    if 1960 <= int(start_date) <= datetime.today().year:
-                        registration["experience"] = int(start_date)
-                else:
-                    registration["experience"] = None
-            status = user.add_user(registration)["status"]
+                    if 1960 < int(start_date) or int(start_date) > datetime.today().year:
+                        return f"Год начала работв не может быт меньшк 1960 и больше {datetime.today().year}"
 
-            error = ""
-            if status == "invalid type for tg_nickname":
-                error = "\nУ вас нет имени пользователя.\n Перейдите в Setting, Edit profile и измените Username"
-            if status == "invalid type for name":
-                error = "\nНекорректно указано имя.\n Проверьте его написание (возномжно в нём присутствуют цифры)"
-            if status == "invalid type for surname":
-                error = "\nНекорректно указана фамилия.\n Проверьте её написание (возномжно в ней присутствуют цифры)"
-            if status == "invalid type for city":
-                error = "\nНекорректно указан город.\n Проверьте его написание (возномжно в нем присутствуют цифры)"
-            if status == "invalid type for experience":
-                error = "\nУбедитесь в том, что вы корректно указали год начала работы"
+            registration["experience"] = int(start_date)
+            registration["name"]: sentence[0]
+            registration["surname"]: sentence[1]
+            registration["city"]: sentence[2]
+            status = user.add_user(registration)["status"]
 
             if status == "ok":
                 employer_flag = False
                 mixed_flag = False
                 return "Вы успешно зарегистрированы!\nДля дальнейших действий передите в /cabinet"
-            else:
-                return f"Введены некорректные данные!{error}"
 
         elif status == "ok":
             employer_flag = False

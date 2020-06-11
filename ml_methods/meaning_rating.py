@@ -1,3 +1,5 @@
+import warnings
+
 from gensim.models.keyedvectors import Word2VecKeyedVectors
 from os import getcwd
 from os.path import join
@@ -6,6 +8,7 @@ from scipy import spatial
 from pymorphy2 import MorphAnalyzer
 from nltk.corpus import stopwords
 from string import punctuation
+
 
 model = Word2VecKeyedVectors.load(join("/".join(getcwd().split("/")[:-1]) + "/ml/russian_database"))
 STOPWORDS = stopwords.words("russian")
@@ -16,7 +19,6 @@ moprh = MorphAnalyzer()
 class Similarity:
     def __init__(self, model, index2word_set, num_features=300):
         self.model = model
-        print(type(self.model))
         self.itw = index2word_set
         self.num_f = num_features
 
@@ -27,11 +29,11 @@ class Similarity:
 
         part_of_speech = lambda \
                 word: f"{moprh.parse(word)[0].normal_form}_{str(moprh.parse(word)[0].normalized.tag).split(',')[0]}"
-
         for word in words:
             word = part_of_speech(word)
             word = word.replace("INFN", "VERB")
             word = word.replace("ADJF", "ADJ")
+            print(word)
             if word in self.itw and word.split("_")[-1] != "UNKN":
                 n_words += 1
                 feature_vec = np.add(feature_vec, self.model[word])
@@ -53,15 +55,20 @@ class Similarity:
         clean = list(map(self.__clean_text, sentences))
         v1 = self.__avg_feature_vector(clean[0])
         v2 = self.__avg_feature_vector(clean[1])
-        sim = self.distance(v1, v2)
+
+        warnings.filterwarnings("error")
+        try:
+            sim = self.distance(v1, v2)
+        except RuntimeWarning:
+            return 0.0
 
         return sim
 
 
-# comparison = ['некрасивое яблоко', 'красивая в поле кактус красивый']
+# comparison = ['пистолет', 'яблоко']
 #
 # s = Similarity(model, index2word_set)
-# print(s.sim(comparison))
+# print(s.sim(comparison), "sim")
 
 # sim = 1 - spatial.distance.cosine(s1_afv, s2_afv)
 # print(sim)

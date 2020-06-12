@@ -1,2 +1,2 @@
-# vavacancy-bot
+# Mr Din
 telegram bot for vacancies

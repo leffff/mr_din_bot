@@ -413,7 +413,7 @@ class Order:
         {"employer_id": int,
         "title": "str(40),
         "description": "str",
-        "payment": float,
+        "time": int,
         "category": "str(30)"}
         На выход:
         {"status": "ok"}
@@ -423,7 +423,7 @@ class Order:
         employer_id = order_data["employer_id"]
         title = order_data["title"]
         description = order_data["description"]
-        payment = order_data["payment"]
+        time = order_data["time"]
         category = order_data["category"]
         try:
             with sqlite3.connect(DBNAME) as conn:
@@ -431,14 +431,14 @@ class Order:
                 assert type(employer_id) == int, "invalid type for employer_id"
                 assert type(title) == str, "invalid type for title"
                 assert type(description) == str, "invalid type for description"
-                assert type(payment) == float, "invalid type for payment"
+                assert type(time) == int, "invalid type for time"
                 assert type(category) == str, "invalid type for category"
                 cursor.execute('SELECT title FROM orders WHERE title = ?', (title,))
                 if cursor.fetchall():
                     return {"status": "order with this title already exists"}
-                cursor.execute("INSERT INTO orders(employer_id, title, description, payment, category)"
+                cursor.execute("INSERT INTO orders(employer_id, title, description, time, category)"
                                "VALUES (?, ?, ?, ?, ?)",
-                               (employer_id, title, description, payment, category))
+                               (employer_id, title, description, time, category))
                 conn.commit()
                 return {"status": "ok"}
         except Exception as ex:
@@ -490,7 +490,7 @@ class Order:
         finally:
             conn.close()
 
-    def get_payment(self) -> dict:
+    def get_time(self) -> dict:
         """
         Получение payment работника
         На выход:
@@ -501,7 +501,7 @@ class Order:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT payment FROM orders WHERE title = ?", (self.title,))
+                cursor.execute("SELECT time FROM orders WHERE title = ?", (self.title,))
                 out = cursor.fetchone()[0]
                 if out:
                     conn.commit()

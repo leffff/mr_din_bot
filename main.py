@@ -9,7 +9,8 @@ from db_creation import first_db_creation
 from all_models import User, Order
 from swear_words import russian_swear_words
 from russian_word_db import RussianDataset
-from ml_methods import activity_payment_rating, meaning_rating
+
+# from ml_methods import activity_payment_rating, meaning_rating
 
 create_environment()
 
@@ -29,16 +30,50 @@ bot = telebot.TeleBot(TOKEN)
 employer_flag, mixed_flag, create_order, find_worker, find_work = False, False, False, False, False
 
 
+@bot.message_handler(commands=["try_help"])
+def try_help(message):
+    # Эти параметры для клавиатуры необязательны, просто для удобства
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_my_orders = types.KeyboardButton(text="Мои заказы")
+    button_my_works = types.KeyboardButton(text="Мои работы")
+    button_find_work = types.KeyboardButton(text="Искать работу")
+    button_worker = types.KeyboardButton(text="Искать работника")
+    button_create_order = types.KeyboardButton(text="Создать заказ")
+    keyboard.add(button_my_orders, button_my_works, button_find_work, button_worker, button_create_order)
+    bot.send_message(message.from_user.id,
+                     "Выберете одну из следующих команд",
+                     reply_markup=keyboard)
+
+
 @bot.message_handler(commands=['echo'])
 def echo(message):
     ref_user = message.text
     bot.send_message(message.from_user.id, ref_user + " Связь с ботом установлена :)")
 
 
+@bot.message_handler(commands=['info'])
+def info(message):
+    bot.send_message(message.from_user.id,
+                     "  Vavacancy bot - поможет вам,\n "
+                     "как начинающим фрилансерам наработать портфолио из работ \n"
+                     "и получить опыт, чтобы в дальнейшем вы смогли стать настоящим фрилансером.\n "
+                     "Ключеваой особенностью является то, что работы будут \n"
+                     "выполняться абсолютно бесплатно, но условия взаимодействия \n"
+                     "работника с заказчиком будут максимально приближенны к реальным.\n"
+                     "   Если вы являетесь заказчиком, то припомощи нашего сервиса \n"
+                     "ваша работа будет выполнена абсолютно бесплатно.\n"
+                     "Для того, чтобы посмотреть возможности бота передите в /help. \n"
+                     " Перейдя в /rules вы познакомитесь с правилами пользования сервисом")
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.from_user.id,
-                     "Здравствуйте!\nЯ Vavacancy Bot, ваш личный помощник на рынке труда\nЧтобы ознакомиться с моим функционалом воспользуйтесь /help")
+                     "Здравствуйте!\n"
+                     "Я Vavacancy Bot - сервис, где начинающие фрилансеры могут\n"
+                     "наработать себе партфолио, а заказчики получить работу\n"
+                     "абсолютно бесплатно. \n"
+                     "Чтобы узнать больше обо мне воспользуйтесь /help")
 
 
 @bot.message_handler(commands=['help'])
@@ -51,7 +86,7 @@ def help(message):
 
     elif status == "ok":
         bot.send_message(message.from_user.id,
-                         "Вы уже зарегистрированы!\nПоследующая работа будет происходить через /cabinet")
+                         "Вы уже зарегистрированы!\nПоследgующая работа будет происходить через /cabinet")
 
     else:
         bot.send_message(message.from_user.id,
@@ -65,7 +100,7 @@ def register(message):
     if status == "user not found":
         keyboard = types.InlineKeyboardMarkup(True)
         keyboard.add(types.InlineKeyboardButton("РАБОТОДАТЕЛЬ", callback_data="employer"),
-                     types.InlineKeyboardButton("РАБОТОДАТЕЛЬ И РАБОТНИК", callback_data="mixed"))
+                     types.InlineKeyboardButton("РАБОТНИК", callback_data="mixed"))
         bot.send_message(message.from_user.id,
                          "Если если вы хотите иметь только права работодателя (Ваш профиль не будет рекомендоваться при поиске работников)",
                          reply_markup=keyboard)
@@ -198,7 +233,7 @@ def callback_buttons(call):
         elif call.data == 'mixed':
             bot.send_message(call.message.chat.id,
                              "Для завершения регистрации отправьте сообщение в формате:\n\nИМЯ\nФАМИЛИЯ\nГОРОД ПРОЖИВАНИЯ\nСПЕЦИАЛИЗАЦИЯ\nЛИЧНОСТНЫЕ КАЧЕСТВА\nДАТА НАЧАЛА РАБОТЫ (ГГГГ)")
-            bot.send_message(call.message.chat.id, 'Работодатель и работник')
+            bot.send_message(call.message.chat.id, 'Работник')
             mixed_flag = True
             employer_flag = False
 
@@ -327,4 +362,3 @@ while True:
     except Exception as e:
         bot.stop_bot()
         print("BOT DOWN", str(datetime.now()).split(".")[0], sep="\t")
-        time.sleep(10)

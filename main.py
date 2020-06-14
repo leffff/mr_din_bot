@@ -54,7 +54,7 @@ def echo(message):
 @bot.message_handler(commands=['info'])
 def info(message):
     bot.send_message(message.from_user.id,
-                     "  Vavacancy bot - поможет вам,\n "
+                     "  Mr. Din поможет вам,"
                      "как начинающим фрилансерам наработать портфолио из работ \n"
                      "и получить опыт, чтобы в дальнейшем вы смогли стать настоящим фрилансером.\n "
                      "Ключеваой особенностью является то, что работы будут \n"

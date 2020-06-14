@@ -43,9 +43,8 @@ class User:
         "name": "str(30)",
         "surname": "str(30)",
         "qualification": "str, str",
-        "qualities": "str, str",
-        "experience": "int",
-        "city": "str(30)"}
+        "category": "str, str",
+        "experience": "int"}
         На выход:
          {"status": "ok"}
         {"status": error("invalid type for {e. g. tg_nickname}", unknown)}
@@ -57,8 +56,7 @@ class User:
         surname = user_data["surname"]
         qualification = user_data["qualification"]
         experience = user_data["experience"]
-        qualities = user_data["qualities"]
-        city = user_data["city"]
+        category = user_data["category"]
 
         try:
             with sqlite3.connect(DBNAME) as conn:
@@ -70,12 +68,11 @@ class User:
                 assert type(surname) == str, "invalid type for surname"
                 assert type(qualification) == str, "invalid type for qualification"
                 assert type(experience) == int, "invalid type for experience"
-                assert type(qualities) == str, "invalid type for qualities"
-                assert type(city) == str, f"invalid type for city"
+                assert type(category) == str, "invalid type for category"
                 cursor.execute(
-                    'INSERT INTO users(tg_nickname, tg_id, name, surname, qualification, experience, qualities, city) '
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                    (tg_nickname, tg_id, name, surname, qualification, experience, qualities, city))
+                    'INSERT INTO users(tg_nickname, tg_id, name, surname, qualification, experience, category) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    (tg_nickname, tg_id, name, surname, qualification, experience, category))
                 conn.commit()
                 return {"status": "ok"}
         except Exception as ex:
@@ -175,30 +172,6 @@ class User:
         finally:
             conn.close()
 
-    def get_city(self) -> dict:
-        """
-       получение city пользователя
-       На выход:
-       {'status': "ok", "out": out}
-       {"status": "error in query, result = False"}
-       {'status': unknown error}
-       """
-
-        try:
-            with sqlite3.connect(DBNAME) as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT city FROM users WHERE tg_id = ?", (self.tg_id,))
-                out = cursor.fetchone()
-                if out:
-                    conn.commit()
-                    return {"status": "ok", "out": out[0]}
-                return {"status": "error in query, result = False"}
-
-        except Exception as ex:
-            return {"status": ex.args[0]}
-        finally:
-            conn.close()
-
     def get_tg_nickname(self) -> dict:
         """
         Получение tg_nickname пользователя
@@ -222,9 +195,9 @@ class User:
         finally:
             conn.close()
 
-    def get_qualities(self) -> dict:
+    def get_category(self) -> dict:
         """
-        Получение qualities пользователя
+        Получение category пользователя
         На выход:
         {'status': "ok", "out": out}
         {"status": "error in query, result = False"}
@@ -233,7 +206,7 @@ class User:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT qualities FROM users WHERE tg_id = ?", (self.tg_id,))
+                cursor.execute("SELECT category FROM users WHERE tg_id = ?", (self.tg_id,))
                 out = cursor.fetchone()
                 if out:
                     conn.commit()
@@ -414,7 +387,8 @@ class Order:
         "title": "str(40),
         "description": "str",
         "time": int,
-        "category": "str(30)"}
+        "category": "str(30)",
+        "worker_skills": str}
         На выход:
         {"status": "ok"}
         {"status": "order with this title already exists"}
@@ -425,6 +399,7 @@ class Order:
         description = order_data["description"]
         time = order_data["time"]
         category = order_data["category"]
+        worker_skills = order_data["worker_skills"]
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
@@ -433,12 +408,13 @@ class Order:
                 assert type(description) == str, "invalid type for description"
                 assert type(time) == int, "invalid type for time"
                 assert type(category) == str, "invalid type for category"
+                assert type(worker_skills) == str, "invalid type for worker_skills"
                 cursor.execute('SELECT title FROM orders WHERE title = ?', (title,))
                 if cursor.fetchall():
                     return {"status": "order with this title already exists"}
-                cursor.execute("INSERT INTO orders(employer_id, title, description, time, category)"
-                               "VALUES (?, ?, ?, ?, ?)",
-                               (employer_id, title, description, time, category))
+                cursor.execute("INSERT INTO orders(employer_id, title, description, time, category, worker_skills)"
+                               "VALUES (?, ?, ?, ?, ?, ?)",
+                               (employer_id, title, description, time, category, worker_skills))
                 conn.commit()
                 return {"status": "ok"}
         except Exception as ex:
@@ -534,6 +510,28 @@ class Order:
         finally:
             conn.close()
 
+    def get_worker_skills(self) -> dict:
+        """
+        Получение worker_skills заказа
+        На выход:
+        {"status": "ok", "out": out}
+        {"status": unknown error}
+        {"status": "error in query, result = False"}
+        """
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT worker_skills FROM orders WHERE title = ?", (self.title,))
+                out = cursor.fetchone()[0]
+                if out:
+                    conn.commit()
+                    return {"status": "ok", "out": out}
+                return {"status": "error in query, result = False"}
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
     def get_start_time(self) -> dict:
         """
         Получение start_time заказа
@@ -612,7 +610,7 @@ class Order:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT feedback FROM orders WHERE title = ? LIMIT 1", (self.title,))
+                cursor.execute("SELECT feedback FROM orders WHERE title = ?", (self.title,))
                 out = cursor.fetchone()[0]
                 if out:
                     conn.commit()
@@ -623,7 +621,7 @@ class Order:
         finally:
             conn.close()
 
-    def get_cancellation(self) -> dict:
+    def get_result(self) -> dict:
         """
         Получение cancellation заказа
         На выход:
@@ -634,12 +632,12 @@ class Order:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT cancellation FROM orders WHERE title = ? LIMIT 1", (self.title,))
+                cursor.execute("SELECT result FROM orders WHERE title = ?", (self.title,))
                 out = cursor.fetchone()[0]
-                if out:
+                if out is not None:
                     conn.commit()
                     return {"status": "ok", "out": out}
-                return {"status": "no cancellation"}
+                return {"status": "order is not finished"}
         except Exception as ex:
             return {'status': ex.args[0]}
         finally:
@@ -661,22 +659,20 @@ class Order:
         finally:
             conn.close()
 
-    def set_cancellation(self, cancellation_type: str, finish_time: int) -> dict:
+    def set_finished(self, result: int, finish_time: int) -> dict:
         """
         Функция для отмены заказа.
         На выход:
         {'status': "ok"}
-        {'status': error("invalid type for cancellation_type", "invalid type for finish_time", unknown)}
+        {'status': error("invalid type for result", "invalid type for finish_time", unknown)}
         """
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                assert type(cancellation_type) == str, "invalid type for cancellation_type"
+                assert type(result) == int, "invalid type for result"
                 assert type(finish_time) == int, "invalid type for finish_time"
-                cursor.execute("UPDATE orders SET cancellation = ? WHERE title = ?",
-                               (cancellation_type, self.title))
-                cursor.execute("UPDATE orders SET result = 0 WHERE title = ?",
-                               (self.title,))
+                cursor.execute("UPDATE orders SET result = ? WHERE title = ?",
+                               (result, self.title))
 
                 worker_id = self.get_worker_id()
                 if worker_id["status"] != "ok":
@@ -696,42 +692,9 @@ class Order:
         finally:
             conn.close()
 
-    def set_done(self, finish_time: int) -> dict:
-        """
-        Функция для успешного завершения заказа.
-        На выход:
-        {'status': "ok"}
-        {'status': error("invalid type for finish_time", unknown)}
-        """
-        try:
-            with sqlite3.connect(DBNAME) as conn:
-                cursor = conn.cursor()
-                assert type(finish_time) == int, "invalid type for finish_time"
-                cursor.execute("UPDATE orders SET done = ? WHERE title = ?",
-                               (True, self.title))
-                cursor.execute("UPDATE orders SET result = 1 WHERE title = ?",
-                               (self.title,))
-                worker_id = self.get_worker_id()
-                if worker_id["status"] != "ok":
-                    return {"status": worker_id["status"]}
-                worker_id = worker_id["out"]
-                active_orders = self.get_active_orders(worker_id)
-                if type(active_orders) != int:
-                    return {"status": active_orders}
-                cursor.execute("UPDATE orders SET active_orders = ? WHERE title = ?",
-                               (active_orders, self.title))
-                cursor.execute("UPDATE orders SET active = ? WHERE title = ?", (False, self.title))
-                cursor.execute("UPDATE orders SET finish_time = ? WHERE title = ?", (finish_time, self.title))
-                conn.commit()
-                return {'status': 'ok'}
-        except Exception as ex:
-            return {'status': ex.args[0]}
-        finally:
-            conn.close()
-
     def get_ml_data(self) -> dict:
         """
-        Функция для получения кортежа (result(0/1), active_orders, payment)
+        Функция для получения кортежа (result(0/1), active_orders, time)
         На выход:
         {"result": "ok", "out": out}
         {'status': error("order is not finished", unknown)}
@@ -743,10 +706,10 @@ class Order:
                 output = cursor.fetchall()[0]
                 result = output[0]
                 active_orders = output[1]
-                payment = self.get_payment()["out"]
+                time = self.get_time()["out"]
                 assert result is not None, "order is not finished"
                 assert active_orders is not None, "order is not finished"
-                out = (result, active_orders, payment)
+                out = (result, active_orders, time)
                 conn.commit()
                 return {"result": "ok", "out": out}
         except Exception as ex:

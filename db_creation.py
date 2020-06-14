@@ -29,9 +29,8 @@ def first_db_creation():
                            "name VARCHAR(30) NOT NULL, "
                            "surname VARCHAR(30) NOT NULL, "
                            "qualification text NOT NULL, "
-                           "experience INT NOT NULL, "
-                           "qualities text NOT NULL,"
-                           "city VARCHAR(30) NOT NULL);")
+                           "category VARCHAR(30) NOT NULL,"
+                           "experience INT NOT NULL);")
 
             cursor.execute("CREATE TABLE orders ("
                            "order_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
@@ -40,14 +39,13 @@ def first_db_creation():
                            "title VARCHAR(40) NOT NULL, "
                            "description TEXT NOT NULL, "
                            "category VARCHAR(30) NOT NULL,"
+                           "worker_skills text NOT NULL,"
                            "active BOOLEAN DEFAULT True NOT NULL, "
-                           "done BOOLEAN DEFAULT False NOT NULL, "
                            "start_time INT,"
                            "finish_time INT,"
                            "time INT,"
                            "mark INT,"
                            "feedback TEXT,"
-                           "cancellation VARCHAR(30),"
                            "result INT,"
                            "active_orders INT)")
             conn.commit()

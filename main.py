@@ -1,6 +1,6 @@
 from telebot import types
 import telebot
-# from os import getenv
+from os import getenv
 import time
 from datetime import datetime
 
@@ -15,10 +15,10 @@ from all_models import User, Order
 
 create_environment()
 
-# TOKEN = getenv("TOKEN")
-# print(TOKEN, "TOKEN")
-# DBNAME = getenv("DBNAME")
-# print(DBNAME, "DBNAME")
+TOKEN = getenv("TOKEN")
+print(TOKEN, "TOKEN")
+DBNAME = getenv("DBNAME")
+print(DBNAME, "DBNAME")
 
 first_db_creation()
 

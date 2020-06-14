@@ -45,7 +45,6 @@ class User:
         "qualification": "str, str",
         "qualities": "str, str",
         "experience": "int",
-        "city": "str(30)"}
         На выход:
          {"status": "ok"}
         {"status": error("invalid type for {e. g. tg_nickname}", unknown)}
@@ -58,7 +57,6 @@ class User:
         qualification = user_data["qualification"]
         experience = user_data["experience"]
         qualities = user_data["qualities"]
-        city = user_data["city"]
 
         try:
             with sqlite3.connect(DBNAME) as conn:
@@ -71,11 +69,10 @@ class User:
                 assert type(qualification) == str, "invalid type for qualification"
                 assert type(experience) == int, "invalid type for experience"
                 assert type(qualities) == str, "invalid type for qualities"
-                assert type(city) == str, f"invalid type for city"
                 cursor.execute(
-                    'INSERT INTO users(tg_nickname, tg_id, name, surname, qualification, experience, qualities, city) '
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                    (tg_nickname, tg_id, name, surname, qualification, experience, qualities, city))
+                    'INSERT INTO users(tg_nickname, tg_id, name, surname, qualification, experience, qualities) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    (tg_nickname, tg_id, name, surname, qualification, experience, qualities))
                 conn.commit()
                 return {"status": "ok"}
         except Exception as ex:
@@ -170,30 +167,6 @@ class User:
                     conn.commit()
                     return {"status": "ok", "out": out[0]}
                 return {"status": "error in query, result = False"}
-        except Exception as ex:
-            return {"status": ex.args[0]}
-        finally:
-            conn.close()
-
-    def get_city(self) -> dict:
-        """
-       получение city пользователя
-       На выход:
-       {'status': "ok", "out": out}
-       {"status": "error in query, result = False"}
-       {'status': unknown error}
-       """
-
-        try:
-            with sqlite3.connect(DBNAME) as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT city FROM users WHERE tg_id = ?", (self.tg_id,))
-                out = cursor.fetchone()
-                if out:
-                    conn.commit()
-                    return {"status": "ok", "out": out[0]}
-                return {"status": "error in query, result = False"}
-
         except Exception as ex:
             return {"status": ex.args[0]}
         finally:

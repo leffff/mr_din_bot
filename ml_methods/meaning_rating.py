@@ -10,7 +10,7 @@ from nltk.corpus import stopwords
 from string import punctuation
 
 
-model = Word2VecKeyedVectors.load(join("/".join(getcwd().split("/")[:-1]) + "/ml/russian_database"))
+model = Word2VecKeyedVectors.load(join("/".join(getcwd().split("/")) + "/ml/russian_database"))
 STOPWORDS = stopwords.words("russian")
 index2word_set = set(model.index2word)
 moprh = MorphAnalyzer()

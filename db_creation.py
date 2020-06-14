@@ -30,8 +30,7 @@ def first_db_creation():
                            "surname VARCHAR(30) NOT NULL, "
                            "qualification text NOT NULL, "
                            "experience INT NOT NULL, "
-                           "qualities text NOT NULL,"
-                           "city VARCHAR(30) NOT NULL);")
+                           "qualities text NOT NULL);")
 
             cursor.execute("CREATE TABLE orders ("
                            "order_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "

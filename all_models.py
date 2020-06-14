@@ -303,22 +303,24 @@ class User:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
                 user_id = self.get_user_id()["out"]
-                cursor.execute(
-                    "SELECT title FROM orders INNER JOIN users ON worker_id = user_id WHERE user_id = ?",
-                    (user_id,)
-                )
-                orders = cursor.fetchall()
-                if orders:
-                    conn.commit()
-                    data = list()
-                    for title in orders:
-                        order = Order()
-                        order.get_by_title(title)
-                        data.append(order)
-                    return {"status": "ok", "out": tuple(data)}
-                return {"status": "no works found"}
+            cursor.execute(
+                "SELECT orders.title FROM orders JOIN users ON worker_id = user_id WHERE user_id = ?",
+                (user_id,)
+            )
+            orders = cursor.fetchall()
+            if orders:
+                conn.commit()
+                data = list()
+                for title in orders:
+                    order = Order()
+                    order.get_by_title(title[0])
+                    data.append(order)
+                return {"status": "ok", "out": tuple(data)}
+            return {"status": "no works found"}
+
         except Exception as ex:
             return {"status": ex.args[0]}
+
         finally:
             conn.close()
 
@@ -336,15 +338,16 @@ class User:
                 cursor = conn.cursor()
                 user_id = self.get_user_id()["out"]
                 cursor.execute(
-                    "SELECT title FROM orders INNER JOIN users ON employer_id = user_id WHERE user_id = ?",
+                    "SELECT orders.title FROM orders JOIN users ON employer_id = user_id WHERE user_id = ?",
                     (user_id,))
+
                 orders = cursor.fetchall()
                 if orders:
                     conn.commit()
                     data = list()
                     for title in orders:
                         order = Order()
-                        order.get_by_title(title)
+                        order.get_by_title(title[0])
                         data.append(order)
                     return {"status": "ok", "out": tuple(data)}
                 return {"status": "no orders found"}
@@ -355,13 +358,13 @@ class User:
 
 
 class Order:
-    '''
+    """
     Инициализаци и Проверка title
     На выход:
     {"status": "ok"}
     {"status": "order not found"}
     {"status": error("invalid type for title"), unknown}
-    '''
+    """
 
     def get_by_title(self, title: str) -> dict:
         try:

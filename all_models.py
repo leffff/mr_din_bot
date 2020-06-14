@@ -603,6 +603,28 @@ class Order:
         finally:
             conn.close()
 
+    def get_active(self) -> dict:
+        """
+                Получение active заказа
+                На выход:
+                {"status": "ok", "out": out}
+                {"status": unknown error}
+                {"status": "order is not finished"}
+                """
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT active FROM orders WHERE title = ?", (self.title,))
+                out = cursor.fetchone()[0]
+                if out:
+                    conn.commit()
+                    return {"status": "ok", "out": out}
+                return {"status": "order is not finished"}
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
     def get_feedback(self) -> dict:
         """
         Получение feedback заказа

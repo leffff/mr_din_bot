@@ -31,12 +31,6 @@ class RussianDataset:
                 if chunk:  # filter out keep-alive new chunks
                     f.write(chunk)
 
-    @staticmethod
-    def create_directory():
-        path = getcwd() + "/ml"
-        mkdir(path)
-        print(path, "ADDED")
-
     def __download_russian_database(self):
         file_id = '1ftHaSvFz50n7ly5Z-RuyY9_U3qVcWk7G'
         destination = getcwd() + "/ml/russian_database"
@@ -50,10 +44,8 @@ class RussianDataset:
         print(destination, "ADDED")
 
     def download(self):
-        if 'ml' not in listdir(getcwd()):
-            self.create_directory()
-            self.__download_russian_database()
-            self.__download_vectorized()
+        self.__download_russian_database()
+        self.__download_vectorized()
 
 # d = RussianDataset()
 # d.download()

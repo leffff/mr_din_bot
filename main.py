@@ -1,17 +1,24 @@
 from telebot import types
 import telebot
 from os import getenv
-import time
 from datetime import datetime
 
 from create_environment import create_environment
 from db_creation import first_db_creation
 from all_models import User, Order
 
-# from swear_words import russian_swear_words
+from swear_words import russian_swear_words
+
+swearings = russian_swear_words()
+
 # from russian_word_db import RussianDataset
 
-# from ml_methods import activity_payment_rating, meaning_rating
+print("bbbb")
+# rd = RussianDataset()
+# rd.download()
+print("aaaaaa")
+
+from ml_methods import activity_time_rating, meaning_rating
 
 create_environment()
 
@@ -21,10 +28,6 @@ DBNAME = getenv("DBNAME")
 print(DBNAME, "DBNAME")
 
 first_db_creation()
-
-# swearings = russian_swear_words()
-# rd = RussianDataset()
-# rd.download()
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -42,6 +45,10 @@ categories = {
     "VR/AR": False
 }
 
+def censor_checker(phrase):
+    for word in phrase.split():
+        if word in swearings:
+            return f"В заявке присутствует нецензурнач лексика: {word}"
 
 def user_in_db(message):
     id = message.from_user.id
@@ -61,10 +68,14 @@ def registration_reply(message):
             global employer_flag, mixed_flag
             start_date = 0
             registration = {"tg_id": message.from_user.id, "tg_nickname": message.from_user.username}
+
             if not sentence[0].isalpha():
                 return "Имя должно состоять только из букв"
+            censor_checker(sentence[0])
+
             if not sentence[1].isalpha():
                 return "Фамилия должна состоять только из букв"
+            censor_checker(sentence[1])
 
             if employer_flag:
                 registration["qualification"] = "работодатель"
@@ -78,6 +89,7 @@ def registration_reply(message):
                     if 1960 > int(start_date) or int(start_date) > datetime.today().year:
                         return f"Год начала работв не может быт меньшк 1960 и больше {datetime.today().year}"
 
+                censor_checker(sentence[2])
                 registration["qualification"] = sentence[3]
 
                 for i in range(len(list(categories.keys()))):
@@ -142,22 +154,13 @@ def start(message):
 
 @bot.message_handler(commands=['help'])
 def help(message):
-    status = user_in_db(message)
-    print(status)
     bot.send_message(message.from_user.id,
                      "Я, Mr Din (Do It Now) - сервис, который поможет вам, как начинающим фрилансерам наработать портфолио из работ и получить опыт, чтобы в дальнейшем вы смогли стать опытными работниками.\n"
                      "Ключевой особенностью является то, что работы будут "
                      "выполняться абсолютно бесплатно, но условия взаимодействия "
                      "работника с заказчиком будут максимально приближенны к реальным.\n"
-                     "Если вы являетесь заказчиком, то при помощи нашего сервиса ваша работа будет выполнена абсолютно бесплатно.\n\n")
-
-    if status == "user not found":
-        bot.send_message(message.from_user.id,
-                         "Cначала Вам нужно зарегистрироваться!\nДля этого воспользуйтесть /register\n\n")
-
-    elif status == "ok":
-        bot.send_message(message.from_user.id,
-                     "Команды для работы со мной:\n"
+                     "Если вы являетесь заказчиком, то при помощи нашего сервиса ваша работа будет выполнена абсолютно бесплатно.\n\n"
+                     "Команды по работе со мной:\n"
                      "/register - регистрация нового пользователя\n"
                      "/cabinet - просмотр вашего профиля\n"
                      "/my_orders - просмотр ваших заказов\n"
@@ -168,10 +171,6 @@ def help(message):
                      "Правила:\n"
                      "1. Чтобы завершить заказ заказчик должен вызвать /my_orders и ответить '+' (без ковычек) на соощение с нужным заказом.\n"
                      "2. При поиске работников/заказов для выбора закза/работника вам нужно ответьть '+' (без ковычек) на выбранное сообщение\n")
-
-    else:
-        bot.send_message(message.from_user.id,
-                         "Приносим извенения! Произошли неполадки! Мы уже работаем над их устранением")
 
 
 @bot.message_handler(commands=['register'])
@@ -280,7 +279,16 @@ def my_orders(message):
         print(orders)
         if orders["status"] == "ok":
             for i in orders["out"]:
-                bot.send_message(message.from_user.id, " ".join(list(i)))
+                active = "да" if i.get_active()['out'] else "нет"
+                if not i.get_active()['out']:
+                    user = User()
+                    id = i.get_worker_id()
+                    user.get_user_by_id(id)
+                    worker = f"\nНикнейм Работника: @{user.get_tg_nickname()}"
+                else:
+                    worker = ""
+                bot.send_message(message.from_user.id, f"Название: {i.title}\nОписание: {i.get_description()['out']}\nПродолжительность: {i.get_time()['out']} дня\nАктивно: {active}{worker}")
+                print(i)
         elif orders["status"] == "no orders found":
             bot.send_message(message.from_user.id, "У вас пока нет заказов.")
     else:
@@ -294,7 +302,7 @@ def my_works(message):
     if status == "ok":
         user = User()
         user.get_from_tg_id(message.from_user.id)
-        if user.get_qualification() == "работодатель":
+        if user.get_qualification() != "работодатель":
             orders = user.watch_my_works()
             if orders["status"] == "ok":
                 for i in orders["out"]:
@@ -302,42 +310,47 @@ def my_works(message):
             elif orders["status"] == "no works found":
                 bot.send_message(message.from_user.id, "У вас пока нет работы.")
         else:
-            bot.send_message(message.from_user.id, "Вы не мождете просмотриеть свои работы, так как Вы зарегистрированы, как заказчик.")
+            bot.send_message(message.from_user.id,
+                             "Вы не мождете просмотриеть свои работы, так как Вы зарегистрированы, как заказчик.")
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
 
-@bot.message_handler(commands=["fond_work"])
+@bot.message_handler(commands=["find_work"])
 def find_work(message):
     status = user_in_db(message)
     print(status)
     if status == "ok":
         user = User()
         user.get_from_tg_id(message.from_user.id)
-        if user.get_qualification() == "работодатель":
-            pass
+        if user.get_qualification() != "работодатель":
+            order = Order()
+            print(order.get_all_orders())
         else:
             bot.send_message(message.from_user.id, "Вы не модете искать работу, так как вы являетесь работодателем.")
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
 
-@bot.message_handler(commands=["fond_work"])
-def find_work(message):
+@bot.message_handler(commands=["find_worker"])
+def find_worker(message):
     status = user_in_db(message)
     print(status)
     if status == "ok":
-        bot.send_message(message.from_user.id, "Эта функция пока недоступна")
+        user = User()
+        print(user.get_all_users())
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
 
 @bot.message_handler(content_types=["text"])
 def text(message):
+    global employer_flag, mixed_flag, create_order, find_worker, find_work
     if employer_flag or mixed_flag:
         print("REGISTRATION")
         out = registration_reply(message)
         bot.send_message(message.from_user.id, out)
+        employer_flag, mixed_flag = False, False
 
     elif create_order:
         print("CREATE ORDER")
@@ -386,7 +399,7 @@ def callback_buttons(call):
 
         elif call.data in list(categories.keys()):
             bot.send_message(call.message.chat.id,
-                             "Для завершения регистрации отправьте сообщение в формате:\n\nИМЯ\nФАМИЛИЯ\nДАТА НАЧАЛА РАБОТЫ (ГГГГ)\nОБРАЗОВАПНИЕ И ЛИЧНОСТНЫЕ КАЧЕСТВА")
+                             "Для завершения регистрации отправьте сообщение в формате:\n\nИМЯ\nФАМИЛИЯ\nДАТА НАЧАЛА РАБОТЫ (ГГГГ)\nНАВЫКИ, ТЕХНОГОЛИИ И УМЕНИЯ")
             bot.send_message(call.message.chat.id, 'Вы будете зарегистрированы, как работник')
             categories[call.data] = True
 
@@ -407,16 +420,20 @@ def add_order_reply(message):
     if status == "ok":
         order = Order()
         if len(sentence) == 4:
-            order_creation = {"employer_id": message.from_user.id}
+            user = User()
+            user.get_from_tg_id(message.from_user.id)
+            order_creation = {"employer_id": user.get_user_id()["out"]}
             sentence[2] = "".join(sentence[2:])
 
             if len(sentence[0]) > 40 or len(sentence[0]) < 5:
                 return "Длина названия должна быть больше 5 и меньше 40 символов"
+            censor_checker(sentence[0])
             if not sentence[1].isdigit():
                 return "Длитеольность выполнения заказа должна састоять только из цифр"
-            print(len(sentence[2]), sentence[2])
+            censor_checker(sentence[1])
             if len(sentence[2]) < 30:
                 return "Слишком короткое описание заказа(оно должно быть больше 30 символов)"
+            censor_checker(sentence[2])
 
             order_creation["title"] = sentence[0]
             order_creation["time"] = int(sentence[1])
@@ -427,6 +444,7 @@ def add_order_reply(message):
                     print(list(categories.keys())[i])
                     order_creation["category"] = list(categories.keys())[i]
 
+            censor_checker(sentence[3])
             order_creation["worker_skills"] = sentence[3]
 
             status = order.add_order(order_creation)["status"]

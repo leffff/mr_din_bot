@@ -1,11 +1,11 @@
 import sqlite3
 
 from create_environment import create_environment
-from os import getenv
+# from os import getenv
 
 create_environment()
 
-DBNAME = getenv("DBNAME")
+# DBNAME = getenv("DBNAME")
 
 
 # Первое создание базы данных

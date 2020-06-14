@@ -1,10 +1,10 @@
 import sqlite3
 from create_environment import create_environment
-from os import getenv
+# from os import getenv
 
 create_environment()
 
-DBNAME = getenv("DBNAME")
+# DBNAME = getenv("DBNAME")
 
 
 # Класс для взаимодействия с пользователями
@@ -305,7 +305,8 @@ class User:
                 user_id = self.get_user_id()["out"]
                 cursor.execute(
                     "SELECT title FROM orders INNER JOIN users ON worker_id = user_id WHERE user_id = ?",
-                    (user_id,))
+                    (user_id,)
+                )
                 orders = cursor.fetchall()
                 if orders:
                     conn.commit()

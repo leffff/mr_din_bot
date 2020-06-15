@@ -9,8 +9,9 @@ from pymorphy2 import MorphAnalyzer
 from nltk.corpus import stopwords
 from string import punctuation
 
-
-model = Word2VecKeyedVectors.load(join("/".join(getcwd().split("/")) + "/ml/russian_database"))
+path = join("/".join(getcwd().split("/")) + "/ml/russian_database")
+print(path)
+model = Word2VecKeyedVectors.load(path)
 STOPWORDS = stopwords.words("russian")
 index2word_set = set(model.index2word)
 moprh = MorphAnalyzer()

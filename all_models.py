@@ -817,8 +817,10 @@ class Order:
         """
         try:
             with sqlite3.connect(DBNAME) as conn:
+                assert type(category) == str, "invalid type for category"
+                assert type(worker_id) == str, "invalid type for worker_id"
                 cursor = conn.cursor()
-                cursor.execute("SELECT title FROM orders WHERE category = ? AND worker_id != ?", (category, worker_id))
+                cursor.execute("SELECT * FROM orders WHERE category = ? AND worker_id != ?", (category, worker_id))
                 out = cursor.fetchall()
                 if out:
                     return {"status": "ok", "out": out}

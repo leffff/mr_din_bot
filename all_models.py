@@ -807,7 +807,7 @@ class Order:
             conn.close()
 
     @staticmethod
-    def get_all_orders() -> dict:
+    def get_all_orders(category, worker_id) -> dict:
         """
         Функция для получения списка классов всех заказов.
         На выход:
@@ -818,18 +818,11 @@ class Order:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT title FROM orders")
+                cursor.execute("SELECT title FROM orders WHERE category = ? AND worker_id != ?", (category, worker_id))
                 out = cursor.fetchall()
                 if out:
-                    conn.commit()
-                    data = list()
-                    for title in out:
-                        order = Order()
-                        order.get_by_title(title)
-                        data.append(order)
-                    conn.commit()
-                    return {"status": "ok", "out": tuple(data)}
-                return {"status": "no orders in database"}
+                    return {"status": "ok", "out": out}
+                return {"status": "no orders found"}
         except Exception as ex:
             return {"status": ex.args[0]}
         finally:

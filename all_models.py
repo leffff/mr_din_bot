@@ -448,6 +448,27 @@ class Order:
         finally:
             conn.close()
 
+    def get_employer_id(self) -> dict:
+        """
+        Получение id работодателя
+        На выход:
+        {"status": "ok", "out": out}
+        {'status': unknown error}
+        """
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT employer_id FROM orders WHERE title = ?", (self.title,))
+                out = cursor.fetchone()[0]
+                if out:
+                    conn.commit()
+                    return {"status": "ok", "out": out}
+                return {"status": "error in query"}
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
     def get_worker_id(self) -> dict:
         """
         Получение id работника
@@ -649,11 +670,11 @@ class Order:
 
     def get_result(self) -> dict:
         """
-        Получение cancellation заказа
+        Получение result заказа
         На выход:
         {"status": "ok", "out": out}
         {"status": unknown error}
-        {"status": "no cancellation"}
+        {"status": "order is not finished"}
         """
         try:
             with sqlite3.connect(DBNAME) as conn:

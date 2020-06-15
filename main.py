@@ -45,10 +45,12 @@ categories = {
     "VR/AR": False
 }
 
+
 def censor_checker(phrase):
     for word in phrase.split():
         if word in swearings:
             return f"В заявке присутствует нецензурнач лексика: {word}"
+
 
 def user_in_db(message):
     id = message.from_user.id
@@ -287,7 +289,8 @@ def my_orders(message):
                     worker = f"\nНикнейм Работника: @{user.get_tg_nickname()}"
                 else:
                     worker = ""
-                bot.send_message(message.from_user.id, f"Название: {i.title}\nОписание: {i.get_description()['out']}\nПродолжительность: {i.get_time()['out']} дня\nАктивно: {active}{worker}")
+                bot.send_message(message.from_user.id,
+                                 f"Название: {i.title}\nОписание: {i.get_description()['out']}\nПродолжительность: {i.get_time()['out']} дня\nАктивно: {active}{worker}")
                 print(i)
         elif orders["status"] == "no orders found":
             bot.send_message(message.from_user.id, "У вас пока нет заказов.")
@@ -306,7 +309,24 @@ def my_works(message):
             orders = user.watch_my_works()
             if orders["status"] == "ok":
                 for i in orders["out"]:
-                    bot.send_message(message.from_user.id, " ".join(list(i)))
+                    active = "да" if i.get_active()['out'] else "нет"
+                    if not i.get_active()['out']:
+                        if i.get_mark()["status"] == "ok":
+                            mark = f"\nОценка: {i.get_mark()['out']}"
+                            feedback = f"\nОтзыв: {i.get_feedback()['out']}"
+                        else:
+                            mark = ""
+                            feedback = ""
+                    else:
+                        mark = ""
+                        feedback = ""
+                    user = User()
+                    employer_id = i.get_employer_id()
+                    user.get_user_by_id(employer_id)
+                    employer = f"\nНикнейм Работодателя: @{user.get_tg_nickname()}"
+                    bot.send_message(message.from_user.id,
+                                     f"Название: {i.title}\nОписание: {i.get_description()['out']}\nПродолжительность: {i.get_time()['out']} дня\nАктивно: {active}{employer}\nКатегория: {i.get_category()['out']}{mark}{feedback}")
+                    print(i)
             elif orders["status"] == "no works found":
                 bot.send_message(message.from_user.id, "У вас пока нет работы.")
         else:
@@ -327,7 +347,7 @@ def find_work(message):
             order = Order()
             print(order.get_all_orders())
         else:
-            bot.send_message(message.from_user.id, "Вы не модете искать работу, так как вы являетесь работодателем.")
+            bot.send_message(message.from_user.id, "Вы не можете искать работу, так как вы являетесь работодателем.")
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 

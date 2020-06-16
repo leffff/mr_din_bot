@@ -1,7 +1,7 @@
 import sqlite3
 from create_environment import create_environment
 from os import getenv
-
+import numpy as np
 create_environment()
 
 DBNAME = getenv("DBNAME")
@@ -433,7 +433,9 @@ class User:
                     res_sp.append(result)
                     active_sp.append(active_orders)
                     time_sp.append(time)
-                out = [res_sp, active_sp, time_sp]
+                ar1 = np.array([res_sp, active_sp])
+                ar2 = np.array([time_sp])
+                out = (ar1, ar2)
                 conn.commit()
                 return {"status": "ok", "out": out}
         except Exception as ex:

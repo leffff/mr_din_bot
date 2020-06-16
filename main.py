@@ -306,8 +306,8 @@ def my_works(message):
                     active = "да" if i.get_active()['out'] else "нет"
                     if not i.get_active()['out']:
                         if i.get_mark()["status"] == "ok":
-                            mark = f"\n*Оценка:* {i.get_mark()['out']}"
-                            feedback = f"\n*Отзыв:* {i.get_feedback()['out']}"
+                            mark = f"\n\nОценка: {i.get_mark()['out']}"
+                            feedback = f"\n\nОтзыв: {i.get_feedback()['out']}"
                         else:
                             mark = ""
                             feedback = ""
@@ -315,12 +315,13 @@ def my_works(message):
                         mark = ""
                         feedback = ""
                     user = User()
-                    employer_id = i.get_employer_id()
-                    user.get_user_by_id(employer_id)
-                    employer = f"\n*Никнейм Работодателя:* @{user.get_tg_nickname()}"
+                    employer_id = i.get_employer_id()["out"]
+                    print(employer_id)
+                    employer1 = user.get_user_by_id(employer_id)["out"]
+                    print(employer1)
+                    employer = f"\n\nНикнейм Работодателя: @{employer1.get_tg_nickname()['out']}"
                     bot.send_message(message.from_user.id,
-                                     f"*Название:* {i.title}\n*Описание:* {i.get_description()['out']}\n*Продолжительность:* {i.get_time()['out']} дня\n*Активно:* {active}{employer}\n*Категория:* {i.get_category()['out']}{mark}{feedback}",
-                                     parse_mode="Markdown")
+                                     f"Название: {i.title}\n\nОписание: {i.get_description()['out']}\n\nПродолжительность: {i.get_time()['out']} дня\n\nАктивно: {active}{employer}\n\nКатегория: {i.get_category()['out']}{mark}{feedback}")
                 bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
             elif orders["status"] == "no works found":
                 bot.send_message(message.from_user.id,
@@ -375,7 +376,7 @@ def hire(message):
             tg_nickname = message.reply_to_message.text[11:].split("\n")[0]
             global task
             user = User().get_user_by_nickname(tg_nickname)["out"]
-            bot.send_message(user.tg_id, f"Пользователь @{message.from_user.username} предлагает Вам работу!\nОтветьте '+' (без ковычек) на следующее сообщение, если вы принимаетет предложение.")
+            bot.send_message(user.tg_id, f"Пользователь @{message.from_user.username} предлагает Вам работу!\nОтветьте /agree на следующее сообщение, если вы принимаетет предложение.")
             bot.send_message(user.tg_id, task)
             return "Ваше предложение успешно отправлено! Ждите ответа."
 
@@ -425,6 +426,20 @@ def appropriate_workers(message):
             elif workers["status"] == "no workers found":
                 return "Нет походящих работниклов ддля вашего заказа"
         return "Простите, я Вас не понимаю!"
+
+
+@bot.message_handler(commands=["agree"])
+def agree(message):
+    if message.reply_to_message is not None:
+        order = Order()
+        order.get_by_title(message.reply_to_message.text.split("\n")[0].split(": ")[1])
+        print(order)
+        user = User()
+        user.get_from_tg_id(message.from_user.id)
+        print(user)
+        order.take_task(user.get_user_id()["out"], time.time())
+        bot.send_message(message.from_user.id, "Вы начали работу над заказом!")
+
 
 @bot.message_handler(commands=["find_worker"])
 def find_worker(message):
@@ -494,8 +509,6 @@ def text(message):
             flags[i] = False
         return
 
-    # if message.from_user.text == "+":
-    #     pass
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_buttons(call):

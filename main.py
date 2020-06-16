@@ -91,7 +91,7 @@ def registration_reply(message):
 
     if len(sentence) == 2 or len(sentence) == 4:
         if status == "user not found":
-            global employer_flag, mixed_flag
+            global flags
             start_date = 0
             registration = {"tg_id": message.from_user.id, "tg_nickname": message.from_user.username}
 
@@ -105,12 +105,12 @@ def registration_reply(message):
             if len(censor_checker(sentence[1])) != 0:
                 return censor_checker(sentence[1])
 
-            if employer_flag:
+            if flags[0]:
                 registration["qualification"] = "работодатель"
                 registration["category"] = "работодатель"
                 start_date = 1960
 
-            elif mixed_flag:
+            elif flags[1]:
                 start_date = sentence[2]
                 if len(start_date) == 4 and start_date.isdigit():
                     if 1960 > int(start_date) or int(start_date) > datetime.today().year:
@@ -135,18 +135,18 @@ def registration_reply(message):
             status = user.add_user(registration)["status"]
             print(status)
             if status == "ok":
-                employer_flag = False
-                mixed_flag = False
-
+                flags[0] = False
+                flags[1] = False
                 for i in list(categories.keys()):
                     categories[i] = False
+
 
                 return "Вы успешно зарегистрированы!\nДля дальнейших действий передите в /help."
             else:
                 return "Проверьте, правильно ли Вы ввели все данные.\nВоспользуйтесь коммандой /register заново."
         elif status == "ok":
-            employer_flag = False
-            mixed_flag = False
+            flags[0] = False
+            flags[1] = False
             return "Вы уже зарагестрированны"
         else:
             "Произошла ошибка, пожалуйста попробуйте позже"
@@ -283,7 +283,7 @@ def my_orders(message):
                 else:
                     worker = ""
                 bot.send_message(message.from_user.id,
-                                 f"*Название:* {i.title}\n*Описание:* {i.get_description()['out']}\n*Продолжительность:* {i.get_time()['out']} дня\n*Активно:* {active}{worker}",
+                                 f"*Название:* {i.title}\n\n*Описание:* {i.get_description()['out']}\n\n*Продолжительность:* {i.get_time()['out']} дня\n\n*Требуемые навыки:* {i.get_worker_skills()['out']}\n\n*Категория заказа:* {i.get_category()['out']}\n\n*Активно:* {active}{worker}",
                                  parse_mode="Markdown")
             bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
         elif orders["status"] == "no orders found":
@@ -417,7 +417,7 @@ def appropriate_workers(message):
                 print(w_data)
                 r = 15 if len(w_data) > 15 else len(w_data)
                 for i in range(r):
-                    sentence = f"Работник: @{w_data[i][1]}\nИмя: {w_data[i][3]}\nФамилия: {w_data[i][4]}\nНавыки: {w_data[i][5]}\nНачало работы: {w_data[i][7]} г."
+                    sentence = f"*Работник:* @{w_data[i][1]}\n\n*Имя:* {w_data[i][3]}\n\n*Фамилия:* {w_data[i][4]}\n\n*Навыки:* {w_data[i][5]}\n\n*Начало работы:* {w_data[i][7]} г."
                     global task
                     task = message.reply_to_message.text
                     return sentence
@@ -435,10 +435,10 @@ def find_worker(message):
         orders = user.find_worker_data()
         if orders['status'] == "ok":
             data = user.find_worker_data()["out"]
-            bot.send_message(message.from_user.id, "Это-ваши активные заказы.\nОтветьте '+' (без ковычек) на сообщение с закаком, для которого вы хотели бы нации работника")
+            bot.send_message(message.from_user.id, "Это-ваши активные заказы.\n\nОтветьте '+' (без ковычек) на сообщение с закаком, для которого вы хотели бы нации работника")
             for i in data:
                 bot.send_message(message.from_user.id,
-                                 f"Название: {i[3]}\nОписание заказа: {i[4]}\nВремя на выполнение: {i[10]}\nТребуемые навыки: {i[6]}")
+                                 f"*Название:* {i[3]}\n\n*Описание заказа:* {i[4]}\n\n*Время на выполнение:* {i[10]} дня\n\n*Требуемые навыки:* {i[6]}", parse_mode="Markdown")
                 global flags
                 flags[3] = True
 
@@ -470,7 +470,7 @@ def text(message):
     if flags[3]:
         print("-----------")
         out = appropriate_workers(message)
-        bot.send_message(message.from_user.id, out)
+        bot.send_message(message.from_user.id, out, parse_mode="Markdown")
         for i in range(len(flags)):
             flags[i] = False
         flags[5] = True
@@ -502,7 +502,7 @@ def callback_buttons(call):
     id = call.message.chat.id
     user = User()
     status = user.get_from_tg_id(id)["status"]
-    global employer_flag, mixed_flag, create_order_f, find_work_f, find_worker_f
+    global flags
 
     if status == "user not found":
         if call.data == 'employer':
@@ -511,7 +511,7 @@ def callback_buttons(call):
             bot.send_message(call.message.chat.id, 'Вы будете зарегистрированы, как работодатель')
             for i in range(len(flags)):
                 flags[i] = False
-            employer_flag = True
+            flags[0] = True
 
         elif call.data == 'mixed':
             keyboard = types.InlineKeyboardMarkup(True)
@@ -528,7 +528,7 @@ def callback_buttons(call):
 
             for i in range(len(flags)):
                 flags[i] = False
-            mixed_flag = True
+            flags[1] = True
 
         elif call.data in list(categories.keys()):
             bot.send_message(call.message.chat.id,

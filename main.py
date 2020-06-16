@@ -13,7 +13,6 @@ from create_environment import create_environment
 from db_creation import first_db_creation
 from all_models import User, Order
 
-
 from swear_words import russian_swear_words
 
 swearings = russian_swear_words()
@@ -54,7 +53,7 @@ first_db_creation()
 
 bot = telebot.TeleBot(TOKEN)
 
-employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f, hire_f = False, False, False, False, False, False
+employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f, hire_f, my_orders_f = False, False, False, False, False, False, False
 flags = [employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f, hire_f]
 task = ""
 
@@ -90,8 +89,9 @@ def registration_reply(message):
     user = User()
 
     if len(sentence) == 2 or len(sentence) == 4:
+        global flags
         if status == "user not found":
-            global flags
+
             start_date = 0
             registration = {"tg_id": message.from_user.id, "tg_nickname": message.from_user.username}
 
@@ -139,7 +139,6 @@ def registration_reply(message):
                 flags[1] = False
                 for i in list(categories.keys()):
                     categories[i] = False
-
 
                 return "Вы успешно зарегистрированы!\nДля дальнейших действий передите в /help."
             else:
@@ -285,6 +284,8 @@ def my_orders(message):
                 bot.send_message(message.from_user.id,
                                  f"*Название:* {i.title}\n\n*Описание:* {i.get_description()['out']}\n\n*Продолжительность:* {i.get_time()['out']} дня\n\n*Требуемые навыки:* {i.get_worker_skills()['out']}\n\n*Категория заказа:* {i.get_category()['out']}\n\n*Активно:* {active}{worker}",
                                  parse_mode="Markdown")
+                global my_orders_f
+                my_orders_f = True
             bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
         elif orders["status"] == "no orders found":
             bot.send_message(message.from_user.id,
@@ -376,10 +377,10 @@ def hire(message):
             tg_nickname = message.reply_to_message.text[11:].split("\n")[0]
             global task
             user = User().get_user_by_nickname(tg_nickname)["out"]
-            bot.send_message(user.tg_id, f"Пользователь @{message.from_user.username} предлагает Вам работу!\nОтветьте /agree на следующее сообщение, если вы принимаетет предложение.")
+            bot.send_message(user.tg_id,
+                             f"Пользователь @{message.from_user.username} предлагает Вам работу!\nОтветьте /agree на следующее сообщение, если вы принимаетет предложение.")
             bot.send_message(user.tg_id, task)
             return "Ваше предложение успешно отправлено! Ждите ответа."
-
 
 
 def work_application(message):
@@ -411,8 +412,12 @@ def appropriate_workers(message):
             if workers["status"] == "ok":
                 w_data = workers["out"]
                 rater = lambda x: (x[-1] / 10 +
-                                   meaning_rating.Similarity(model, index2word_set).sim([order.get_worker_skills()["out"], x[5]]) +
-                                   activity_time_rating.task_completion(user.get_user_by_id(x[0])["out"].get_ml_data()["out"][0], user.get_user_by_id(x[0])["out"].get_ml_data()["out"][1], [[x[-2], order.get_time()["out"]]])) / 3
+                                   meaning_rating.Similarity(model, index2word_set).sim(
+                                       [order.get_worker_skills()["out"], x[5]]) +
+                                   activity_time_rating.task_completion(
+                                       user.get_user_by_id(x[0])["out"].get_ml_data()["out"][0],
+                                       user.get_user_by_id(x[0])["out"].get_ml_data()["out"][1],
+                                       [[x[-2], order.get_time()["out"]]])) / 3
 
                 w_data = sorted(w_data, key=rater, reverse=True)
                 print(w_data)
@@ -450,10 +455,12 @@ def find_worker(message):
         orders = user.find_worker_data()
         if orders['status'] == "ok":
             data = user.find_worker_data()["out"]
-            bot.send_message(message.from_user.id, "Это-ваши активные заказы.\n\nОтветьте '+' (без ковычек) на сообщение с закаком, для которого вы хотели бы нации работника")
+            bot.send_message(message.from_user.id,
+                             "Это-ваши активные заказы.\n\nОтветьте '+' (без ковычек) на сообщение с закаком, для которого вы хотели бы нации работника")
             for i in data:
                 bot.send_message(message.from_user.id,
-                                 f"*Название:* {i[3]}\n\n*Описание заказа:* {i[4]}\n\n*Время на выполнение:* {i[10]} дня\n\n*Требуемые навыки:* {i[6]}", parse_mode="Markdown")
+                                 f"*Название:* {i[3]}\n\n*Описание заказа:* {i[4]}\n\n*Время на выполнение:* {i[10]} дня\n\n*Требуемые навыки:* {i[6]}",
+                                 parse_mode="Markdown")
                 global flags
                 flags[3] = True
 
@@ -464,9 +471,23 @@ def find_worker(message):
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
 
+def finish_order(message):
+    if message.reply_to_message is not None:
+        verdict = message.text.split("\n\n")[0]
+        if verdict == "+" or verdict == "-":
+            if len(message.text.split("\n\n")) == 3:
+                res = 1 if verdict == "+" else 0
+                order = Order()
+                order.get_by_title(message.reply_to_message.text.split("\n\n")[0].split(": ")[1])
+                order.set_finished(res, time.time())
+                if message.text.split("\n\n")[1].isdigit():
+                    if 0 <= int(message.text.split("\n\n")[1]) <= 10:
+                        order.add_feedback_and_mark(message.text.split("\n\n")[2], message.text.split("\n\n")[1])
+
+
 @bot.message_handler(content_types=["text"])
 def text(message):
-    global flags, text
+    global flags, text, my_orders_f
     print(flags)
     if flags[0] or flags[1]:
         out = registration_reply(message)
@@ -508,6 +529,13 @@ def text(message):
         for i in range(len(flags)):
             flags[i] = False
         return
+
+    if my_orders_f:
+        out = finish_order(message)
+        bot.send_message(message.from_user.id, out)
+        for i in range(len(flags)):
+            flags[i] = False
+        my_orders_f = False
 
 
 @bot.callback_query_handler(func=lambda call: True)

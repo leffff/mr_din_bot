@@ -308,6 +308,9 @@ class User:
                             avg_mark = round(sum(m) / len(m), 2)
                         else:
                             avg_mark = 5
+                        cursor.execute("SELECT COUNT(title) FROM orders WHERE worker_id = ? AND active = True", (user_id,))
+                        active_orders = cursor.fetchall()
+                        worker.append(active_orders)
                         worker.append(avg_mark)
                     return {"status": "ok", "out": out}
                 return {"status": "no workers found"}

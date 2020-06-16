@@ -263,29 +263,24 @@ class User:
             conn.close()
 
     @staticmethod
-    def get_all_users() -> dict:
+    def get_all_users(category) -> dict:
         """
         Функция для получения списка классов всех пользователей.
         На выход:
-        {"status": "ok", "out": tuple(User(), User()...)}
-        {"status": "no users in database"}
+        {"status": "ok", "out": tuple(tuple(), )}
+        {"status": "no workers found"}
         {'status': unknown error}
         """
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT tg_id FROM users WHERE qualification != 'работодатель'")
+                cursor.execute("SELECT * FROM users WHERE qualification != 'работодатель' AND category = ?",
+                               (category,))
                 out = cursor.fetchall()
                 if out:
                     conn.commit()
-                    data = list()
-                    for tg_id in out:
-                        user = User()
-                        user.get_from_tg_id(tg_id)
-                        data.append(user)
-                    conn.commit()
-                    return {"status": "ok", "out": tuple(data)}
-                return {"status": "no users in database"}
+                    return {"status": "ok", "out": out}
+                return {"status": "no workers found"}
         except Exception as ex:
             return {"status": ex.args[0]}
         finally:
@@ -370,8 +365,8 @@ class User:
                 cursor = conn.cursor()
                 user_id = self.get_user_id()["out"]
                 cursor.execute(
-                    "SELECT * FROM orders WHERE employer_id = ? AND worker_id = ?",
-                    (user_id, None))
+                    "SELECT * FROM orders WHERE employer_id = ? AND worker_id IS NULL",
+                    (user_id,))
 
                 orders = cursor.fetchall()
                 if orders:
@@ -382,7 +377,6 @@ class User:
             return {"status": ex.args[0]}
         finally:
             conn.close()
-
 
 
 class Order:

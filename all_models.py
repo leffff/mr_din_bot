@@ -279,8 +279,8 @@ class User:
         finally:
             conn.close()
 
-    @staticmethod
-    def get_all_users(category) -> dict:
+
+    def get_all_users(self, category) -> dict:
         """
         Функция для получения списка классов всех пользователей.
         На выход:
@@ -291,8 +291,8 @@ class User:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM users WHERE qualification != 'работодатель' AND category = ?",
-                               (category,))
+                cursor.execute("SELECT * FROM users WHERE qualification != 'работодатель' AND category = ? AND tg_id != ?",
+                               (category, self.tg_id))
                 out = cursor.fetchall()
                 if out:
                     out = list(map(list, out))

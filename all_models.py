@@ -150,6 +150,22 @@ class User:
         finally:
             conn.close()
 
+    def get_avg_mark(self):
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                user_id = self.get_user_id()["out"]
+                cursor.execute("SELECT mark FROM orders WHERE worker_id = ? AND mark IS NOT NULL", (user_id,))
+                out = cursor.fetchall()
+                if out:
+                    conn.commit()
+                    return {'status': "ok", "out": out}
+                return {"status": "no marks found"}
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
     def get_qualification(self) -> dict:
         """
         получение qualification пользователя

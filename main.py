@@ -168,6 +168,14 @@ def start(message):
                      "абсолютно бесплатно. Do It Now.\n"
                      "Чтобы узнать больше обо мне воспользуйтесь /help")
 
+@bot.message_handler(commands=['alive'])
+def alive(message):
+    while True:
+        bot.send_message(message.from_user.id,
+                     "Левы заснул, поэтому так")
+        bot.send_message(message.from_user.id,
+                         "/alive")
+        time.sleep(2)
 
 @bot.message_handler(commands=['help'])
 def help(message):
@@ -446,8 +454,8 @@ def appropriate_workers(message):
                 return out
 
             elif workers["status"] == "no workers found":
-                return "Нет походящих работниклов ддля вашего заказа"
-        return "Простите, я Вас не понимаю!"
+                return ["Нет походящих работников для вашего заказа"]
+        return ["Простите, я Вас не понимаю!"]
 
 
 @bot.message_handler(commands=["agree"])
@@ -491,9 +499,10 @@ def find_worker(message):
 
 
 def finish_order(message):
-    print(message)
+    print("---------------", message)
     if message.reply_to_message is not None:
         verdict = message.text.split("\n\n")[0]
+        print(verdict)
         if verdict == "+" or verdict == "-":
             if len(message.text.split("\n\n")) == 3:
                 res = 1 if verdict == "+" else 0
@@ -516,7 +525,7 @@ def finish_order(message):
 
                                 else:
                                     order.set_active_true()
-                                    return "Попробуйте ещё раз"
+                                    return "Попробуйте ещё раз. /my_orders"
                             else:
                                 order.set_active_true()
                                 return "Оценка не должна быть отрицательной или больше 10"
@@ -528,9 +537,9 @@ def finish_order(message):
                 else:
                     return "Заказ уже завершён"
             else:
-                return "Проверьте,что ввели все данные. И попробуйте ещё раз."
+                return "Проверьте,что ввели все данные. И попробуйте ещё раз /my_orders."
         else:
-            return "Извините, не понимаю вас. Попробуйте ещё раз."
+            return "Извините, не понимаю вас. Попробуйте ещё раз /my_orders."
 
 
 @bot.message_handler(content_types=["text"])

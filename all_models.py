@@ -408,6 +408,39 @@ class User:
         finally:
             conn.close()
 
+    def get_ml_data(self) -> dict:
+        """
+        Функция для получения кортежа ((result(0/1), active_orders, time), )
+        На выход:
+        {"result": "ok", "out": out}
+        {'status': error("order is not finished", unknown)}
+        """
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                user_id = self.get_user_id()["out"]
+                cursor.execute("SELECT result, active_orders, time  FROM orders WHERE worker_id = ?", (user_id,))
+                i = cursor.fetchall()
+                res_sp = list()
+                active_sp = list()
+                time_sp = list()
+                for output in i:
+                    result = output[0]
+                    active_orders = output[1]
+                    time = output[2]
+                    if result is None or active_orders is None:
+                        continue
+                    res_sp.append(result)
+                    active_sp.append(active_orders)
+                    time_sp.append(time)
+                out = [res_sp, active_sp, time_sp]
+                conn.commit()
+                return {"status": "ok", "out": out}
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
 
 class Order:
     """
@@ -786,31 +819,6 @@ class Order:
                 cursor.execute("UPDATE orders SET finish_time = ? WHERE title = ?", (finish_time, self.title))
                 conn.commit()
                 return {'status': "ok"}
-        except Exception as ex:
-            return {'status': ex.args[0]}
-        finally:
-            conn.close()
-
-    def get_ml_data(self) -> dict:
-        """
-        Функция для получения кортежа (result(0/1), active_orders, time)
-        На выход:
-        {"result": "ok", "out": out}
-        {'status': error("order is not finished", unknown)}
-        """
-        try:
-            with sqlite3.connect(DBNAME) as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT result, active_orders  FROM orders WHERE title = ?", (self.title,))
-                output = cursor.fetchall()[0]
-                result = output[0]
-                active_orders = output[1]
-                time = self.get_time()["out"]
-                assert result is not None, "order is not finished"
-                assert active_orders is not None, "order is not finished"
-                out = (result, active_orders, time)
-                conn.commit()
-                return {"result": "ok", "out": out}
         except Exception as ex:
             return {'status': ex.args[0]}
         finally:

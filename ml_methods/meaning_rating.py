@@ -34,7 +34,6 @@ class Similarity:
             word = part_of_speech(word)
             word = word.replace("INFN", "VERB")
             word = word.replace("ADJF", "ADJ")
-            print(word)
             if word in self.itw and word.split("_")[-1] != "UNKN":
                 n_words += 1
                 feature_vec = np.add(feature_vec, self.model[word])
@@ -62,7 +61,6 @@ class Similarity:
             sim = self.distance(v1, v2)
         except RuntimeWarning:
             return 0.0
-
         return sim
 
 

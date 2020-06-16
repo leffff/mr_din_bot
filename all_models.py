@@ -94,12 +94,12 @@ class User:
                 cursor = conn.cursor()
                 assert type(user_id) == int, "invalid type for user_id"
                 cursor.execute(f'SELECT tg_id FROM users WHERE user_id = ?', (user_id,))
-                tg_id = cursor.fetchone()
+                tg_id = cursor.fetchone()[0]
                 if tg_id:
                     conn.commit()
                     user = User()
                     user.get_from_tg_id(tg_id)
-                    return {"status": "ok", "output": user}
+                    return {"status": "ok", "out": user}
                 return {"status": "user not found"}
         except Exception as ex:
             return {'status': ex.args[0]}
@@ -785,7 +785,7 @@ class Order:
         finally:
             conn.close()
 
-    def take_task(self, worker_id: int, start_time: int) -> dict:
+    def take_task(self, worker_id: int, start_time: float) -> dict:
         """
         Добавление работника и время начала работы в заказ
         На выход:
@@ -796,18 +796,18 @@ class Order:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
                 assert type(worker_id) == int, "invalid type for worker_id"
-                assert type(start_time) == int, "invalid type for start_time"
+                assert type(start_time) == float, "invalid type for start_time"
                 cursor.execute("UPDATE orders SET worker_id = ?, start_time = ?, active = ? WHERE title = ?",
                                (worker_id, start_time, True, self.title))
                 conn.commit()
-                return {"result": "ok"}
+                return {"status": "ok"}
         except Exception as ex:
             return {'status': ex.args[0]}
         finally:
             conn.close()
 
     @staticmethod
-    def get_all_orders(category, worker_id) -> dict:
+    def get_all_orders(category, employer_id) -> dict:
         """
         Функция для получения списка классов всех заказов.
         На выход:
@@ -818,9 +818,9 @@ class Order:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 assert type(category) == str, "invalid type for category"
-                assert type(worker_id) == str, "invalid type for worker_id"
+                assert type(employer_id) == int, "invalid type for employer_id"
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM orders WHERE category = ? AND worker_id != ?", (category, worker_id))
+                cursor.execute("SELECT * FROM orders WHERE category = ? AND employer_id != ?", (category, employer_id))
                 out = cursor.fetchall()
                 if out:
                     return {"status": "ok", "out": out}

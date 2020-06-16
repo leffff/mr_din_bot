@@ -1,6 +1,12 @@
+import time
+from os.path import join
+
+from gensim.models.keyedvectors import Word2VecKeyedVectors
+from nltk.corpus import stopwords
+from pymorphy2 import MorphAnalyzer
 from telebot import types
 import telebot
-from os import getenv
+from os import getenv, getcwd
 from datetime import datetime
 
 from create_environment import create_environment
@@ -17,6 +23,13 @@ from russian_word_db import RussianDataset
 # rd = RussianDataset()
 # rd.download()
 # print("Downloading finished")
+
+path = join("/".join(getcwd().split("/")) + "/ml/russian_database")
+print(path)
+model = Word2VecKeyedVectors.load(path)
+STOPWORDS = stopwords.words("russian")
+index2word_set = set(model.index2word)
+moprh = MorphAnalyzer()
 
 from ml_methods import activity_time_rating, meaning_rating
 
@@ -50,12 +63,10 @@ categories = {
 }
 
 
-
-
 def censor_checker(phrase):
     for word in phrase.split():
         if word.lower() in swearings:
-            return f'В заявке присутствует нецензурнач лексика: "{word}"'
+            return f'В заявке присутствует нецензурная лексика: "{word}"\nВоспользуйтесь коммандой /register заново'
     return ""
 
 
@@ -78,13 +89,12 @@ def registration_reply(message):
             registration = {"tg_id": message.from_user.id, "tg_nickname": message.from_user.username}
 
             if not sentence[0].isalpha():
-                return "Имя должно состоять только из букв"
+                return f"Имя должно состоять только из букв"
             if len(censor_checker(sentence[0])) != 0:
                 return censor_checker(sentence[0])
 
             if not sentence[1].isalpha():
                 return "Фамилия должна состоять только из букв"
-
             if len(censor_checker(sentence[1])) != 0:
                 return censor_checker(sentence[1])
 
@@ -100,8 +110,10 @@ def registration_reply(message):
                         return f"Год начала работв не может быт меньшк 1960 и больше {datetime.today().year}"
 
                 if len(censor_checker(sentence[2])) != 0:
-                    return censor_checker(sentence[0])
+                    return censor_checker(sentence[2])
 
+                if len(censor_checker(sentence[3])) != 0:
+                    return censor_checker(sentence[3])
                 registration["qualification"] = sentence[3]
 
                 for i in range(len(list(categories.keys()))):
@@ -113,6 +125,7 @@ def registration_reply(message):
             registration["surname"] = sentence[1]
 
             status = user.add_user(registration)["status"]
+            print(status)
             if status == "ok":
                 employer_flag = False
                 mixed_flag = False
@@ -121,7 +134,8 @@ def registration_reply(message):
                     categories[i] = False
 
                 return "Вы успешно зарегистрированы!\nДля дальнейших действий передите в /cabinet"
-
+            else:
+                return "Проверьте, правдлильно ли Вы ввели все данные"
         elif status == "ok":
             employer_flag = False
             mixed_flag = False
@@ -129,22 +143,7 @@ def registration_reply(message):
         else:
             "Произошла ошибка, пожалуйста попробуйте позже"
     else:
-        return "Проверьте, что ввели все данные"
-
-
-@bot.message_handler(commands=["try_help"])
-def try_help(message):
-    # Эти параметры для клавиатуры необязательны, просто для удобства
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_my_orders = types.KeyboardButton(text="Мои заказы")
-    button_my_works = types.KeyboardButton(text="Мои работы")
-    button_find_work = types.KeyboardButton(text="Искать работу")
-    button_worker = types.KeyboardButton(text="Искать работника")
-    button_create_order = types.KeyboardButton(text="Создать заказ")
-    keyboard.add(button_my_orders, button_my_works, button_find_work, button_worker, button_create_order)
-    bot.send_message(message.from_user.id,
-                     "Выберете одну из следующих команд",
-                     reply_markup=keyboard)
+        return "Проверьте, что ввели все данные!\n\nPS: Используйте Shift + Enter чтобы перенести курсор на следующую строчку, если вы работаете с компьютера."
 
 
 @bot.message_handler(commands=['echo'])
@@ -157,28 +156,28 @@ def echo(message):
 def start(message):
     bot.send_message(message.from_user.id,
                      "Здравствуйте!\n"
-                     "Я Mr. Din (Do It Now) - сервис, где начинающие фрилансеры могут "
+                     "Я Mr. Din - сервис, где начинающие фрилансеры могут "
                      "наработать себе партфолио, а заказчики получить работу "
-                     "абсолютно бесплатно.\n"
+                     "абсолютно бесплатно. Do It Now.\n"
                      "Чтобы узнать больше обо мне воспользуйтесь /help")
 
 
 @bot.message_handler(commands=['help'])
 def help(message):
     bot.send_message(message.from_user.id,
-                     "Я, Mr Din (Do It Now) - сервис, который поможет вам, как начинающим фрилансерам наработать портфолио из работ и получить опыт, чтобы в дальнейшем вы смогли стать опытными работниками.\n"
+                     "Я, Mr Din - сервис, который поможет вам, как начинающим фрилансерам наработать портфолио из работ и получить опыт, чтобы в дальнейшем вы смогли стать опытными работниками.\n"
                      "Ключевой особенностью является то, что работы будут "
                      "выполняться абсолютно бесплатно, но условия взаимодействия "
                      "работника с заказчиком будут максимально приближенны к реальным.\n"
-                     "Если вы являетесь заказчиком, то при помощи нашего сервиса ваша работа будет выполнена абсолютно бесплатно.\n\n"
+                     "Если вы являетесь заказчиком, то при помощи нашего сервиса ваша работа будет выполнена абсолютно бесплатно. Do It Now.\n\n"
                      "Команды по работе со мной:\n"
                      "/register - регистрация нового пользователя\n"
                      "/cabinet - просмотр вашего профиля\n"
                      "/my_orders - просмотр ваших заказов\n"
                      "/my_tasks - просмотр ваших работ\n"
-                     "/add_orders - добавление нового заказа\n"
+                     "/add_order - добавление нового заказа\n"
                      "/find_worker - поиск работника\n"
-                     "/add_feedback - добавление отзыва и  оценка выполненной работы\n\n"
+                     "/add_feedback - добавление отзыва и оценка выполненной работы\n\n"
                      "Правила:\n"
                      "1. Чтобы завершить заказ заказчик должен вызвать /my_orders и ответить '+' (без ковычек) на соощение с нужным заказом.\n"
                      "2. При поиске работников/заказов для выбора закза/работника вам нужно ответьть '+' (без ковычек) на выбранное сообщение\n")
@@ -219,42 +218,19 @@ def cabinet(message):
 
             output = f"Имя - {name}\nФамилия - {surname}"
 
-            keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True, one_time_keyboard=True)
-            button_my_orders = types.KeyboardButton(text="/my_orders")
-            button_worker = types.KeyboardButton(text="/find_worker")
-            button_create_order = types.KeyboardButton(text="/add_order")
-            keyboard.add(button_my_orders, button_worker, button_create_order)
-            bot.send_message(message.from_user.id,
-                             "Выберете одну из следующих команд",
-                             reply_markup=keyboard)
-
-            bot.send_message(message.from_user.id, output, reply_markup=keyboard)
-
         else:
             name = user.get_name()["out"]
             surname = user.get_surname()["out"]
             experience = user.get_experience()["out"]
+            categories = user.get_category()["out"]
             qualification = user.get_qualification()["out"]
 
-            output = f"Имя - {name}\nФамилия - {surname}\nОпыт работы - с {experience} года\nСпециализация - {qualification}\n"
-
-            keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True, one_time_keyboard=True)
-            button_my_orders = types.KeyboardButton(text="/my_orders")
-            button_my_works = types.KeyboardButton(text="/my_works")
-            button_find_work = types.KeyboardButton(text="/find_work")
-            button_worker = types.KeyboardButton(text="/find_worker")
-            button_create_order = types.KeyboardButton(text="/add_order")
-            keyboard.add(button_my_orders, button_my_works, button_find_work, button_worker, button_create_order)
-            bot.send_message(message.from_user.id,
-                             "Выберете одну из следующих команд",
-                             reply_markup=keyboard)
-
-            bot.send_message(message.from_user.id, output, reply_markup=keyboard)
+            output = f"Имя - {name}\nФамилия - {surname}\nОпыт работы - с {experience} года\nОбласть - {categories}\nУмения - {qualification}"
+        bot.send_message(message.from_user.id, output)
 
     else:
         bot.send_message(message.from_user.id,
                          "Приносим извенения! Произошли неполадки! Мы уже работаем над их устранением")
-
 
 @bot.message_handler(commands=["add_order"])
 def add_order(message):
@@ -347,10 +323,41 @@ def find_work(message):
         user.get_from_tg_id(message.from_user.id)
         if user.get_qualification() != "работодатель":
             order = Order()
+            call = order.get_all_orders(user.get_category()["out"], user.get_user_id()["out"])
+            if call["status"] == "ok":
+                global flags
+                flags[-1] = True
+                raw_data = call["out"]
+                s = meaning_rating.Similarity(model, index2word_set)
+                mean_sorter = lambda x: s.sim([x[6], user.get_qualification()["out"]])
+
+                data = sorted(raw_data, key=mean_sorter)
+
+                work = tuple(f"Заказчик: @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\nНазвание: {i[3]}\nОписание: {i[4]}\nКатегория: {i[5]}\nНавыки: {i[6]}\nВремя на выполнение: {i[10]}" for i in data)
+                for i in work:
+                    bot.send_message(message.from_user.id, i)
+            else:
+                bot.send_message(message.from_user.id,
+                                 "Нет подходящих заказов")
         else:
             bot.send_message(message.from_user.id, "Вы не можете искать работу, так как вы являетесь работодателем.")
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
+
+
+def work_application(message):
+    if not message.reply_to_message == None:
+        if message.text == "+":
+            order = Order()
+            out = order.get_by_title(message.reply_to_message.text.split("\n")[1].split(": ")[1])
+            print(out)
+            worker = User()
+            worker.get_from_tg_id(message.from_user.id)
+            out = order.take_task(worker.get_user_id()["out"], time.time())["status"]
+            if out == "ok":
+                return "Вы приступили к выполнению задания! Удачи!"
+            return "Я устал, дайте отдохнуть!"
+
 
 
 @bot.message_handler(commands=["find_worker"])
@@ -358,6 +365,7 @@ def find_worker(message):
     status = user_in_db(message)
     if status == "ok":
         user = User()
+
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
@@ -365,20 +373,25 @@ def find_worker(message):
 @bot.message_handler(content_types=["text"])
 def text(message):
     global employer_flag, mixed_flag, create_order, find_worker, find_work
+    global flags
+    print(flags)
     if employer_flag or mixed_flag:
         out = registration_reply(message)
         bot.send_message(message.from_user.id, out)
         employer_flag, mixed_flag = False, False
 
-    elif create_order:
+    if create_order:
         out = add_order_reply(message)
         bot.send_message(message.from_user.id, out)
 
-    elif find_worker:
+    if find_worker:
         pass
 
-    elif find_work:
-        pass
+    if flags[-1]:
+        print("---------------------------")
+        out = work_application(message)
+        bot.send_message(message.from_user.id, out)
+
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -400,7 +413,7 @@ def callback_buttons(call):
         elif call.data == 'mixed':
             keyboard = types.InlineKeyboardMarkup(True)
             keyboard.add(types.InlineKeyboardButton("ДИЗАЙН", callback_data="Дизайн"),
-                         types.InlineKeyboardButton("МОДЕЛТРОВАНИЕ", callback_data="Моделирование"),
+                         types.InlineKeyboardButton("МОДЕЛИРОВАНИЕ", callback_data="Моделирование"),
                          types.InlineKeyboardButton("РАЗРАБОТКА ИГР", callback_data="Геймдев"),
                          types.InlineKeyboardButton("WEB", callback_data="Веб"),
                          types.InlineKeyboardButton("РАЗРАБОТКА ПРИЛОЖЕНИЙ", callback_data="Эпдев"),
@@ -443,13 +456,16 @@ def add_order_reply(message):
 
             if len(sentence[0]) > 40 or len(sentence[0]) < 5:
                 return "Длина названия должна быть больше 5 и меньше 40 символов"
-            censor_checker(sentence[0])
+            if len(censor_checker(sentence[0])) != 0:
+                return censor_checker(sentence[0])
             if not sentence[1].isdigit():
                 return "Длитеольность выполнения заказа должна састоять только из цифр"
-            censor_checker(sentence[1])
+            if len(censor_checker(sentence[1])) != 0:
+                return censor_checker(sentence[1])
             if len(sentence[2]) < 30:
                 return "Слишком короткое описание заказа(оно должно быть больше 30 символов)"
-            censor_checker(sentence[2])
+            if len(censor_checker(sentence[2])) != 0:
+                return censor_checker(sentence[2])
 
             order_creation["title"] = sentence[0]
             order_creation["time"] = int(sentence[1])
@@ -459,15 +475,19 @@ def add_order_reply(message):
                 if list(categories.values())[i]:
                     order_creation["category"] = list(categories.keys())[i]
 
-            censor_checker(sentence[3])
+            if len(censor_checker(sentence[3])) != 0:
+                return censor_checker(sentence[3])
             order_creation["worker_skills"] = sentence[3]
 
             status = order.add_order(order_creation)["status"]
-            if status == "ok":
-                return "Заказ успешно добавлен"
 
-            for i in list(categories.keys()):
-                categories[i] = False
+            if status == "ok":
+                for i in list(categories.keys()):
+                    categories[i] = False
+                print(categories)
+                return "Заказ успешно добавлен"
+            else:
+                return "Провьрьте, указали ли вы все требуемые данные!"
         else:
             return "Провьрьте, указали ли вы все требуемые данные!"
 

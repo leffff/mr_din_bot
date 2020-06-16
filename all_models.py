@@ -751,7 +751,7 @@ class Order:
                 if out:
                     conn.commit()
                     return {"status": "ok", "out": out}
-                return {"status": "order is not finished"}
+                return {"status": "order finished"}
         except Exception as ex:
             return {'status': ex.args[0]}
         finally:
@@ -817,7 +817,18 @@ class Order:
         finally:
             conn.close()
 
-    def set_finished(self, result: int, finish_time: int) -> dict:
+    def set_active_true(self):
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                cursor.execute("UPDATE orders SET active = ? WHERE title = ?", (True, self.title))
+                conn.commit()
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
+    def set_finished(self, result: int, finish_time: float) -> dict:
         """
         Функция для отмены заказа.
         На выход:
@@ -828,7 +839,7 @@ class Order:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
                 assert type(result) == int, "invalid type for result"
-                assert type(finish_time) == int, "invalid type for finish_time"
+                assert type(finish_time) == float, "invalid type for finish_time"
                 cursor.execute("UPDATE orders SET result = ? WHERE title = ?",
                                (result, self.title))
 
@@ -837,8 +848,6 @@ class Order:
                     return {"status": worker_id["status"]}
                 worker_id = worker_id["out"]
                 active_orders = self.get_active_orders(worker_id)
-                if type(active_orders) != int:
-                    return {"status": active_orders}
                 cursor.execute("UPDATE orders SET active_orders = ? WHERE title = ?",
                                (active_orders, self.title))
                 cursor.execute("UPDATE orders SET active = ? WHERE title = ?", (False, self.title))
@@ -915,3 +924,4 @@ class Order:
             return {"status": ex.args[0]}
         finally:
             conn.close()
+

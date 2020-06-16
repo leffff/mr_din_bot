@@ -171,6 +171,7 @@ def start(message):
 
 @bot.message_handler(commands=['help'])
 def help(message):
+    print("help", message)
     bot.send_message(message.from_user.id,
                      "Я, Mr Din - сервис, который поможет вам, как начинающим фрилансерам наработать портфолио из работ и получить опыт, чтобы в дальнейшем вы смогли стать опытными работниками.\n"
                      "Ключевой особенностью является то, что работы будут "
@@ -184,15 +185,15 @@ def help(message):
                      "/my_works - просмотр ваших работ\n"
                      "/add_order - добавление нового заказа\n"
                      "/find_worker - поиск работника\n"
-                     "/find_work - поиск работы\n"
-                     "/add_feedback - добавление отзыва и оценка выполненной работы\n\n"
+                     "/find_work - поиск работы\n\n"
                      "Правила:\n"
-                     "1. Чтобы завершить заказ заказчик должен вызвать /my_orders и ответить '+' (без ковычек) на соощение с нужным заказом.\n"
+                     "1. Чтобы завершить заказ заказчик должен вызвать /my_orders и следовать указаниям.\n"
                      "2. При поиске работников/заказов для выбора закза/работника вам нужно ответьть '+' (без ковычек) на выбранное сообщение\n")
 
 
 @bot.message_handler(commands=['register'])
 def register(message):
+    print("register", message)
     status = user_in_db(message)
 
     if status == "user not found":
@@ -209,6 +210,7 @@ def register(message):
 
 @bot.message_handler(commands=["cabinet"])
 def cabinet(message):
+    print(message)
     status = user_in_db(message)
 
     if status == "user not found":
@@ -231,8 +233,9 @@ def cabinet(message):
             experience = user.get_experience()["out"]
             categories = user.get_category()["out"]
             qualification = user.get_qualification()["out"]
+            mark = user.get_avg_mark()["out"]
 
-            output = f'*Имя* - {name}\n*Фамилия* - {surname}\n*Опыт работы* - с {experience} года\n*Область* - {categories}\n*Умения* - {qualification}'
+            output = f'*Имя* - {name}\n\n*Фамилия* - {surname}\n\n*Рейтинг:* {mark}/10\n\n*Опыт работы* - с {experience} года\n\n*Область* - {categories}\n\n*Умения, навыки* - {qualification}'
         bot.send_message(message.from_user.id, output, parse_mode="Markdown")
         bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
 
@@ -244,6 +247,7 @@ def cabinet(message):
 
 @bot.message_handler(commands=["add_order"])
 def add_order(message):
+    print(message)
     status = user_in_db(message)
     if status == "ok":
         keyboard = types.InlineKeyboardMarkup(True)
@@ -266,21 +270,24 @@ def add_order(message):
 
 @bot.message_handler(commands=["my_orders"])
 def my_orders(message):
+    print(message)
     status = user_in_db(message)
     if status == "ok":
         user = User()
         user.get_from_tg_id(message.from_user.id)
         orders = user.watch_my_orders()
         if orders["status"] == "ok":
+            bot.send_message(message.from_user.id,
+                             "Чтобы закончить заказ, ответьте на сообщение с выбранным заказом в следующем формате:\n\n'+' или '-' (без ковычек, '+' если успешно, '-' если неуспешно)\n\nОЦЕНКА (от 0 до 10)\n\nОТЗЫВ О РАБОТНИКЕ")
             for i in orders["out"]:
                 active = "да" if i.get_active()['out'] else "нет"
                 if not i.get_active()['out']:
                     user = User()
                     id = i.get_worker_id()
                     user.get_user_by_id(id)
-                    worker = f"\n*Никнейм Работника:* @{user.get_tg_nickname()}"
+                    worker = f"\n\n*Работник:* @{user.get_tg_nickname()}"
                 else:
-                    worker = ""
+                    worker = "\n\n*Работник:* --------------"
                 bot.send_message(message.from_user.id,
                                  f"*Название:* {i.title}\n\n*Описание:* {i.get_description()['out']}\n\n*Продолжительность:* {i.get_time()['out']} дня\n\n*Требуемые навыки:* {i.get_worker_skills()['out']}\n\n*Категория заказа:* {i.get_category()['out']}\n\n*Активно:* {active}{worker}",
                                  parse_mode="Markdown")
@@ -296,6 +303,7 @@ def my_orders(message):
 
 @bot.message_handler(commands=["my_works"])
 def my_works(message):
+    print(message)
     status = user_in_db(message)
     if status == "ok":
         user = User()
@@ -337,6 +345,7 @@ def my_works(message):
 
 @bot.message_handler(commands=["find_work"])
 def find_work(message):
+    print(message)
     status = user_in_db(message)
     if status == "ok":
         user = User()
@@ -372,6 +381,7 @@ def find_work(message):
 
 
 def hire(message):
+    print(message)
     if message.reply_to_message is not None:
         if message.text == "+":
             tg_nickname = message.reply_to_message.text[11:].split("\n")[0]
@@ -384,6 +394,7 @@ def hire(message):
 
 
 def work_application(message):
+    print(message)
     if message.reply_to_message is not None:
         if message.text == "+":
             order = Order()
@@ -400,6 +411,7 @@ def work_application(message):
 
 
 def appropriate_workers(message):
+    print(message)
     if message.reply_to_message is not None:
         if message.text == "+":
             order = Order()
@@ -420,13 +432,18 @@ def appropriate_workers(message):
                                        [[x[-2], order.get_time()["out"]]])) / 3
 
                 w_data = sorted(w_data, key=rater, reverse=True)
-                print(w_data)
                 r = 15 if len(w_data) > 15 else len(w_data)
+                out = list()
+                out.append(
+                    "Вот работники, которые могут подойти на вашу работу\nВыберете одного из них и ответьте '+' (без ковычек) на его анкету.")
                 for i in range(r):
-                    sentence = f"*Работник:* @{w_data[i][1]}\n\n*Имя:* {w_data[i][3]}\n\n*Фамилия:* {w_data[i][4]}\n\n*Навыки:* {w_data[i][5]}\n\n*Начало работы:* {w_data[i][7]} г."
+                    user = User().get_user_by_nickname(w_data[i][1])["out"]
+                    mark = user.get_avg_mark()["out"]
+                    sentence = f"*Работник:* @{w_data[i][1]}\n\n*Имя:* {w_data[i][3]}\n\n*Фамилия:* {w_data[i][4]}\n\n*Навыки:* {w_data[i][5]}\n\n*Рейтинг:* {mark}/10\n\n*Начало работы:* {w_data[i][7]} г."
                     global task
                     task = message.reply_to_message.text
-                    return sentence
+                    out.append(sentence)
+                return out
 
             elif workers["status"] == "no workers found":
                 return "Нет походящих работниклов ддля вашего заказа"
@@ -435,6 +452,7 @@ def appropriate_workers(message):
 
 @bot.message_handler(commands=["agree"])
 def agree(message):
+    print(message)
     if message.reply_to_message is not None:
         order = Order()
         order.get_by_title(message.reply_to_message.text.split("\n")[0].split(": ")[1])
@@ -448,6 +466,7 @@ def agree(message):
 
 @bot.message_handler(commands=["find_worker"])
 def find_worker(message):
+    print(message)
     status = user_in_db(message)
     if status == "ok":
         user = User()
@@ -459,7 +478,7 @@ def find_worker(message):
                              "Это-ваши активные заказы.\n\nОтветьте '+' (без ковычек) на сообщение с закаком, для которого вы хотели бы нации работника")
             for i in data:
                 bot.send_message(message.from_user.id,
-                                 f"*Название:* {i[3]}\n\n*Описание заказа:* {i[4]}\n\n*Время на выполнение:* {i[10]} дня\n\n*Требуемые навыки:* {i[6]}",
+                                 f"*Название:* {i[3]}\n\n*Описание заказа:* {i[4]}\n\n*Время на выполнение:* {i[10]} дня\n\n*Категория*: {i[5]}\n\n*Требуемые навыки:* {i[6]}",
                                  parse_mode="Markdown")
                 global flags
                 flags[3] = True
@@ -472,6 +491,7 @@ def find_worker(message):
 
 
 def finish_order(message):
+    print(message)
     if message.reply_to_message is not None:
         verdict = message.text.split("\n\n")[0]
         if verdict == "+" or verdict == "-":
@@ -479,14 +499,43 @@ def finish_order(message):
                 res = 1 if verdict == "+" else 0
                 order = Order()
                 order.get_by_title(message.reply_to_message.text.split("\n\n")[0].split(": ")[1])
-                order.set_finished(res, time.time())
-                if message.text.split("\n\n")[1].isdigit():
-                    if 0 <= int(message.text.split("\n\n")[1]) <= 10:
-                        order.add_feedback_and_mark(message.text.split("\n\n")[2], message.text.split("\n\n")[1])
+                active = order.get_active()["status"]
+                if active == "ok":
+                    out = order.set_finished(res, time.time())["status"]
+                    print(out)
+                    if out == "no worker for this order":
+                        return "На данный заказ ещё не назначен работник"
+                    if out == "ok":
+                        if message.text.split("\n\n")[1].isdigit():
+                            if 0 <= int(message.text.split("\n\n")[1]) <= 10:
+
+                                output = order.add_feedback_and_mark(message.text.split("\n\n")[2],
+                                                                     message.text.split("\n\n")[1])["status"]
+                                if output == "ok":
+                                    return "Заказ завершён.\nДля дальнейщих дейсвий перейдите в /help"
+
+                                else:
+                                    order.set_active_true()
+                                    return "Попробуйте ещё раз"
+                            else:
+                                order.set_active_true()
+                                return "Оценка не должна быть отрицательной или больше 10"
+                        else:
+                            order.set_active_true()
+                            return "Оценка может быть только числом."
+                    else:
+                        return "Извините, но даже ботам нужно отдыхать. Zzz.."
+                else:
+                    return "Заказ уже завершён"
+            else:
+                return "Проверьте,что ввели все данные. И попробуйте ещё раз."
+        else:
+            return "Извините, не понимаю вас. Попробуйте ещё раз."
 
 
 @bot.message_handler(content_types=["text"])
 def text(message):
+    print(message)
     global flags, text, my_orders_f
     print(flags)
     if flags[0] or flags[1]:
@@ -497,6 +546,7 @@ def text(message):
         return
 
     if flags[2]:
+        print('flaaaaag')
         out = add_order_reply(message)
         bot.send_message(message.from_user.id, out)
         for i in range(len(flags)):
@@ -506,7 +556,8 @@ def text(message):
     if flags[3]:
         print("-----------")
         out = appropriate_workers(message)
-        bot.send_message(message.from_user.id, out, parse_mode="Markdown")
+        for i in out:
+            bot.send_message(message.from_user.id, i, parse_mode="Markdown")
         for i in range(len(flags)):
             flags[i] = False
         flags[5] = True
@@ -586,19 +637,19 @@ def callback_buttons(call):
             categories[call.data] = True
             for i in range(len(flags)):
                 flags[i] = False
-            create_order_f = True
+            flags[2] = True
 
 
 def add_order_reply(message):
     status = user_in_db(message)
     sentence = message.text.split("\n\n")
+    print(sentence)
     if status == "ok":
         order = Order()
         if len(sentence) == 4:
             user = User()
             user.get_from_tg_id(message.from_user.id)
             order_creation = {"employer_id": user.get_user_id()["out"]}
-            sentence[2] = "".join(sentence[2:])
 
             if len(sentence[0]) > 40 or len(sentence[0]) < 5:
                 return "Длина названия должна быть больше 5 и меньше 40 символов.\nВоспользуйтесь коммандой /add_order заново."

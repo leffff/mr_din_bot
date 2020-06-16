@@ -295,8 +295,20 @@ class User:
                                (category,))
                 out = cursor.fetchall()
                 if out:
-                    conn.commit()
-                    return {"status": "ok", "out": out}
+                    out = list(map(list, out))
+                    for worker in range(len(out)):
+                        user = User()
+                        tg_id = out[worker][2]
+                        user.get_from_tg_id(tg_id)
+                        user_id = user.get_user_id()["out"]
+                        cursor.execute("SELECT mark FROM orders WHERE worker_id = ? AND mark IS NOT NULL", (user_id,))
+                        out = cursor.fetchall()
+                        if out:
+                            conn.commit()
+                            avg_mark = round(sum(out) / len(out), 2)
+                        avg_mark = 5
+                        out[worker].append(avg_mark)
+                        return {"status": "ok", "out": out}
                 return {"status": "no workers found"}
         except Exception as ex:
             return {"status": ex.args[0]}

@@ -79,7 +79,7 @@ def user_in_db(message):
 
 def registration_reply(message):
     status = user_in_db(message)
-    sentence = message.text.split("\n")
+    sentence = message.text.split("\n\n")
     user = User()
 
     if len(sentence) == 2 or len(sentence) == 4:
@@ -134,7 +134,7 @@ def registration_reply(message):
                 for i in list(categories.keys()):
                     categories[i] = False
 
-                return "Вы успешно зарегистрированы!\nДля дальнейших действий передите в /cabinet"
+                return "Вы успешно зарегистрированы!\nДля дальнейших действий передите в /help."
             else:
                 return "Проверьте, правильно ли Вы ввели все данные.\nВоспользуйтесь коммандой /register заново."
         elif status == "ok":
@@ -161,6 +161,8 @@ def start(message):
                      "наработать себе партфолио, а заказчики получить работу "
                      "абсолютно бесплатно. Do It Now.\n"
                      "Чтобы узнать больше обо мне воспользуйтесь /help")
+    bot.send_message(message.from_user.id, '*bold text* \n *bold again* - dsf', parse_mode='Markdown')
+
 
 
 @bot.message_handler(commands=['help'])
@@ -175,9 +177,10 @@ def help(message):
                      "/register - регистрация нового пользователя\n"
                      "/cabinet - просмотр вашего профиля\n"
                      "/my_orders - просмотр ваших заказов\n"
-                     "/my_tasks - просмотр ваших работ\n"
+                     "/my_works - просмотр ваших работ\n"
                      "/add_order - добавление нового заказа\n"
                      "/find_worker - поиск работника\n"
+                     "/find_work - поиск работы\n"
                      "/add_feedback - добавление отзыва и оценка выполненной работы\n\n"
                      "Правила:\n"
                      "1. Чтобы завершить заказ заказчик должен вызвать /my_orders и ответить '+' (без ковычек) на соощение с нужным заказом.\n"
@@ -197,7 +200,7 @@ def register(message):
                          reply_markup=keyboard)
 
     elif status == "ok":
-        bot.send_message(message.from_user.id, "Вы уже зарегестрированны!")
+        bot.send_message(message.from_user.id, "Вы уже зарегестрированны!\nДля дальнейших действий передите в /help.")
 
 
 @bot.message_handler(commands=["cabinet"])
@@ -217,7 +220,7 @@ def cabinet(message):
             name = user.get_name()["out"]
             surname = user.get_surname()["out"]
 
-            output = f"Имя - {name}\nФамилия - {surname}"
+            output = f'*Имя* - {name}\n*Фамилия* - {surname}'
 
         else:
             name = user.get_name()["out"]
@@ -226,12 +229,14 @@ def cabinet(message):
             categories = user.get_category()["out"]
             qualification = user.get_qualification()["out"]
 
-            output = f"Имя - {name}\nФамилия - {surname}\nОпыт работы - с {experience} года\nОбласть - {categories}\nУмения - {qualification}"
-        bot.send_message(message.from_user.id, output)
+            output = f'*Имя* - {name}\n*Фамилия* - {surname}\n*Опыт работы* - с {experience} года\n*Область* - {categories}\n*Умения* - {qualification}'
+        bot.send_message(message.from_user.id, output, parse_mode="Markdown")
+        bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
 
     else:
         bot.send_message(message.from_user.id,
                          "Приносим извенения! Произошли неполадки! Мы уже работаем над их устранением")
+        bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
 
 
 @bot.message_handler(commands=["add_order"])
@@ -270,13 +275,14 @@ def my_orders(message):
                     user = User()
                     id = i.get_worker_id()
                     user.get_user_by_id(id)
-                    worker = f"\nНикнейм Работника: @{user.get_tg_nickname()}"
+                    worker = f"\n*Никнейм Работника:* @{user.get_tg_nickname()}"
                 else:
                     worker = ""
                 bot.send_message(message.from_user.id,
-                                 f"Название: {i.title}\nОписание: {i.get_description()['out']}\nПродолжительность: {i.get_time()['out']} дня\nАктивно: {active}{worker}")
+                                 f"*Название:* {i.title}\n*Описание:* {i.get_description()['out']}\n*Продолжительность:* {i.get_time()['out']} дня\n*Активно:* {active}{worker}", parse_mode="Markdown")
+            bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
         elif orders["status"] == "no orders found":
-            bot.send_message(message.from_user.id, "У вас пока нет заказов.")
+            bot.send_message(message.from_user.id, "У вас пока нет заказов.\nДля добавления заказа передите в /add_order.")
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
@@ -294,8 +300,8 @@ def my_works(message):
                     active = "да" if i.get_active()['out'] else "нет"
                     if not i.get_active()['out']:
                         if i.get_mark()["status"] == "ok":
-                            mark = f"\nОценка: {i.get_mark()['out']}"
-                            feedback = f"\nОтзыв: {i.get_feedback()['out']}"
+                            mark = f"\n*Оценка:* {i.get_mark()['out']}"
+                            feedback = f"\n*Отзыв:* {i.get_feedback()['out']}"
                         else:
                             mark = ""
                             feedback = ""
@@ -305,14 +311,16 @@ def my_works(message):
                     user = User()
                     employer_id = i.get_employer_id()
                     user.get_user_by_id(employer_id)
-                    employer = f"\nНикнейм Работодателя: @{user.get_tg_nickname()}"
+                    employer = f"\n*Никнейм Работодателя:* @{user.get_tg_nickname()}"
                     bot.send_message(message.from_user.id,
-                                     f"Название: {i.title}\nОписание: {i.get_description()['out']}\nПродолжительность: {i.get_time()['out']} дня\nАктивно: {active}{employer}\nКатегория: {i.get_category()['out']}{mark}{feedback}")
+                                     f"*Название:* {i.title}\n*Описание:* {i.get_description()['out']}\n*Продолжительность:* {i.get_time()['out']} дня\n*Активно:* {active}{employer}\n*Категория:* {i.get_category()['out']}{mark}{feedback}", parse_mode="Markdown")
+                bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
             elif orders["status"] == "no works found":
-                bot.send_message(message.from_user.id, "У вас пока нет работы.")
+                bot.send_message(message.from_user.id, "У вас пока нет работ. Для поиска работы парейдите в /find_work.")
         else:
             bot.send_message(message.from_user.id,
                              "Вы не мождете просмотриеть свои работы, так как Вы зарегистрированы, как заказчик.")
+            bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
@@ -336,21 +344,24 @@ def find_work(message):
                 data = sorted(raw_data, key=mean_sorter)
 
                 work = tuple(
-                    f"Заказчик: @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\nНазвание: {i[3]}\nОписание: {i[4]}\nКатегория: {i[5]}\nНавыки: {i[6]}\nВремя на выполнение: {i[10]}"
+                    f"*Заказчик:* @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\n*Название:* {i[3]}\n*Описание:* {i[4]}\n*Категория:* {i[5]}\n*Навыки:* {i[6]}\n*Время на выполнение:* {i[10]}"
                     for i in data)
                 for i in work:
-                    bot.send_message(message.from_user.id, i)
+                    bot.send_message(message.from_user.id, i, parse_mode="Markdown")
+                bot.send_message(message.from_user.id, "Чтобы начать выполнение заказа ответьте на выбранный заказ '+' (без ковычек).")
             else:
                 bot.send_message(message.from_user.id,
                                  "Нет подходящих заказов")
+                bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
         else:
             bot.send_message(message.from_user.id, "Вы не можете искать работу, так как вы являетесь работодателем.")
+            bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
 
 def work_application(message):
-    if not message.reply_to_message == None:
+    if message.reply_to_message is not None:
         if message.text == "+":
             order = Order()
             out = order.get_by_title(message.reply_to_message.text.split("\n")[1].split(": ")[1])
@@ -359,9 +370,10 @@ def work_application(message):
             worker.get_from_tg_id(message.from_user.id)
             out = order.take_task(worker.get_user_id()["out"], time.time())["status"]
             if out == "ok":
-                return "Вы приступили к выполнению задания! Удачи!"
+                return "Вы приступили к выполнению задания! Удачи!\nДля дальнейших действий передите в /help. "
             return "Я устал, дайте отдохнуть!"
-
+        else:
+            return "Извините, я вас не понимаю."
 
 @bot.message_handler(commands=["find_worker"])
 def find_worker(message):
@@ -391,7 +403,6 @@ def text(message):
         pass
 
     if flags[-1]:
-        print("---------------------------")
         out = work_application(message)
         bot.send_message(message.from_user.id, out)
 
@@ -406,7 +417,7 @@ def callback_buttons(call):
     if status == "user not found":
         if call.data == 'employer':
             bot.send_message(call.message.chat.id,
-                             "Для завершения регистрации отправьте сообщение в формате:\n\nИМЯ\nФАМИЛИЯ")
+                             "Для завершения регистрации отправьте сообщение в формате:\n\nИМЯ\n\nФАМИЛИЯ")
             bot.send_message(call.message.chat.id, 'Вы будете зарегистрированы, как работодатель')
             for i in range(len(flags)):
                 flags[i] = False
@@ -431,14 +442,14 @@ def callback_buttons(call):
 
         elif call.data in list(categories.keys()):
             bot.send_message(call.message.chat.id,
-                             "Для завершения регистрации отправьте сообщение в формате:\n\nИМЯ\nФАМИЛИЯ\nДАТА НАЧАЛА РАБОТЫ (ГГГГ)\nНАВЫКИ, ТЕХНОГОЛИИ И УМЕНИЯ")
+                             "Для завершения регистрации отправьте сообщение в формате:\n\n*ИМЯ*\n\n*ФАМИЛИЯ*\n\n*ДАТА НАЧАЛА РАБОТЫ (ГГГГ)*\n\n*НАВЫКИ, ТЕХНОГОЛИИ И УМЕНИЯ*", parse_mode="Markdown")
             bot.send_message(call.message.chat.id, 'Вы будете зарегистрированы, как работник')
             categories[call.data] = True
 
     if status == "ok":
         if call.data in list(categories.keys()):
             bot.send_message(call.message.chat.id,
-                             "Для создания заказа отправьте сообщение в формате:\n\nНАЗВАНИЕ ЗАКАЗА\nДЛИТЕЛЬНОСТЬ ВЫПОЛНЕНИЯ В ДНЯХ\nОПИСАНИЕ ЗАКАЗА\nТРЕБУЕМЫЕ КАЧЕСТВА И КВОЛИФИКАЦИИ ОТ РАБОТНИКА")
+                             "Для создания заказа отправьте сообщение в формате:\n\n*НАЗВАНИЕ ЗАКАЗА*\n\n*ДЛИТЕЛЬНОСТЬ ВЫПОЛНЕНИЯ В ДНЯХ*\n\n*ОПИСАНИЕ ЗАКАЗА*\n\n*ТРЕБУЕМЫЕ КАЧЕСТВА И КВАЛИФИКАЦИИ ОТ РАБОТНИКА*", parse_mode="Markdown")
             categories[call.data] = True
             for i in range(len(flags)):
                 flags[i] = False
@@ -447,7 +458,7 @@ def callback_buttons(call):
 
 def add_order_reply(message):
     status = user_in_db(message)
-    sentence = message.text.split("\n")
+    sentence = message.text.split("\n\n")
     if status == "ok":
         order = Order()
         if len(sentence) == 4:
@@ -482,12 +493,13 @@ def add_order_reply(message):
             order_creation["worker_skills"] = sentence[3]
 
             status = order.add_order(order_creation)["status"]
-
             if status == "ok":
                 for i in list(categories.keys()):
                     categories[i] = False
                 print(categories)
-                return "Заказ успешно добавлен"
+                return "Заказ успешно добавлен!\nДля дальнейших действий передите в /help."
+            elif status == "order with this title already exists":
+                return "Данное название уже существует. Придумайте другое.\nВоспользуйтесь коммандой /add_order заново."
             else:
                 return "Провьрьте, указали ли вы все требуемые данные!\nВоспользуйтесь коммандой /add_order заново."
         else:

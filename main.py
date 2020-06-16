@@ -56,6 +56,7 @@ bot = telebot.TeleBot(TOKEN)
 
 employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f, hire_f = False, False, False, False, False, False
 flags = [employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f, hire_f]
+task = ""
 
 categories = {
     "Дизайн": False,
@@ -372,10 +373,10 @@ def hire(message):
     if message.reply_to_message is not None:
         if message.text == "+":
             tg_nickname = message.reply_to_message.text[11:].split("\n")[0]
-            print(tg_nickname)
+            global task
             user = User().get_user_by_nickname(tg_nickname)["out"]
             bot.send_message(user.tg_id, f"Пользователь @{message.from_user.username} предлагает Вам работу!\nОтветьте '+' (без ковычек) на следующее сообщение, если вы принимаетет предложение.")
-
+            bot.send_message(user.tg_id, task)
             return "Ваше предложение успешно отправлено! Ждите ответа."
 
 
@@ -417,6 +418,8 @@ def appropriate_workers(message):
                 r = 15 if len(w_data) > 15 else len(w_data)
                 for i in range(r):
                     sentence = f"Работник: @{w_data[i][1]}\nИмя: {w_data[i][3]}\nФамилия: {w_data[i][4]}\nНавыки: {w_data[i][5]}\nНачало работы: {w_data[i][7]} г."
+                    global task
+                    task = message.reply_to_message.text
                     return sentence
 
             elif workers["status"] == "no workers found":
@@ -446,13 +449,9 @@ def find_worker(message):
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
 
-# def agree(message):
-
-
-
 @bot.message_handler(content_types=["text"])
 def text(message):
-    global flags
+    global flags, text
     print(flags)
     if flags[0] or flags[1]:
         out = registration_reply(message)
@@ -481,6 +480,7 @@ def text(message):
         work_application(message)
         for i in range(len(flags)):
             flags[i] = False
+        task = ""
         return
 
     if flags[5]:

@@ -356,6 +356,34 @@ class User:
         finally:
             conn.close()
 
+    def find_worker_data(self):
+        """
+        Функция для find_worker
+        На выход:
+        {"status": "ok", "out": tuple(tuple())}
+        {"status": "no orders found"}
+        {'status': unknown error}
+        """
+
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                user_id = self.get_user_id()["out"]
+                cursor.execute(
+                    "SELECT * FROM orders WHERE employer_id = ? AND worker_id = ?",
+                    (user_id, None))
+
+                orders = cursor.fetchall()
+                if orders:
+                    conn.commit()
+                    return {"status": "ok", "out": orders}
+                return {"status": "no orders found"}
+        except Exception as ex:
+            return {"status": ex.args[0]}
+        finally:
+            conn.close()
+
+
 
 class Order:
     """

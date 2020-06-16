@@ -2,6 +2,7 @@ import sqlite3
 from create_environment import create_environment
 from os import getenv
 import numpy as np
+
 create_environment()
 
 DBNAME = getenv("DBNAME")
@@ -94,6 +95,25 @@ class User:
                 cursor = conn.cursor()
                 assert type(user_id) == int, "invalid type for user_id"
                 cursor.execute(f'SELECT tg_id FROM users WHERE user_id = ?', (user_id,))
+                tg_id = cursor.fetchone()[0]
+                if tg_id:
+                    conn.commit()
+                    user = User()
+                    user.get_from_tg_id(tg_id)
+                    return {"status": "ok", "out": user}
+                return {"status": "user not found"}
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_user_by_nickname(nickname):
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                assert type(nickname) == str, "invalid type for nickname"
+                cursor.execute('SELECT tg_id FROM users WHERE tg_nickname = ?', (nickname,))
                 tg_id = cursor.fetchone()[0]
                 if tg_id:
                     conn.commit()
@@ -279,7 +299,6 @@ class User:
         finally:
             conn.close()
 
-
     def get_all_users(self, category) -> dict:
         """
         Функция для получения списка классов всех пользователей.
@@ -291,8 +310,9 @@ class User:
         try:
             with sqlite3.connect(DBNAME) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM users WHERE qualification != 'работодатель' AND category = ? AND tg_id != ?",
-                               (category, self.tg_id))
+                cursor.execute(
+                    "SELECT * FROM users WHERE qualification != 'работодатель' AND category = ? AND tg_id != ?",
+                    (category, self.tg_id))
                 out = cursor.fetchall()
                 if out:
                     out = list(map(list, out))
@@ -308,7 +328,8 @@ class User:
                             avg_mark = round(sum(m) / len(m), 2)
                         else:
                             avg_mark = 5
-                        cursor.execute("SELECT COUNT(title) FROM orders WHERE worker_id = ? AND active = True", (user_id,))
+                        cursor.execute("SELECT COUNT(title) FROM orders WHERE worker_id = ? AND active = True",
+                                       (user_id,))
                         active_orders = cursor.fetchall()
                         worker.append(active_orders)
                         worker.append(avg_mark)

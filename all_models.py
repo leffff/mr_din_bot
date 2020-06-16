@@ -159,8 +159,9 @@ class User:
                 out = cursor.fetchall()
                 if out:
                     conn.commit()
-                    return {'status': "ok", "out": out}
-                return {"status": "no marks found"}
+                    avg_mark = round(sum(out) / len(out), 2)
+                    return {'status': "ok", "out": avg_mark}
+                return {"status": "no marks found", "out": 5}
         except Exception as ex:
             return {'status': ex.args[0]}
         finally:

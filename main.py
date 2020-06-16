@@ -13,6 +13,7 @@ from create_environment import create_environment
 from db_creation import first_db_creation
 from all_models import User, Order
 
+
 from swear_words import russian_swear_words
 
 swearings = russian_swear_words()
@@ -53,8 +54,8 @@ first_db_creation()
 
 bot = telebot.TeleBot(TOKEN)
 
-employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f = False, False, False, False, False
-flags = [employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f]
+employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f, hire_f = False, False, False, False, False, False
+flags = [employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f, hire_f]
 
 categories = {
     "Дизайн": False,
@@ -166,7 +167,6 @@ def start(message):
                      "наработать себе партфолио, а заказчики получить работу "
                      "абсолютно бесплатно. Do It Now.\n"
                      "Чтобы узнать больше обо мне воспользуйтесь /help")
-    bot.send_message(message.from_user.id, '*bold text* \n *bold again* - dsf', parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['help'])
@@ -368,6 +368,18 @@ def find_work(message):
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
 
+def hire(message):
+    if message.reply_to_message is not None:
+        if message.text == "+":
+            tg_nickname = message.reply_to_message.text[11:].split("\n")[0]
+            print(tg_nickname)
+            user = User().get_user_by_nickname(tg_nickname)["out"]
+            bot.send_message(user.tg_id, f"Пользователь @{message.from_user.username} предлагает Вам работу!\nОтветьте '+' (без ковычек) на следующее сообщение, если вы принимаетет предложение.")
+
+            return "Ваше предложение успешно отправлено! Ждите ответа."
+
+
+
 def work_application(message):
     if message.reply_to_message is not None:
         if message.text == "+":
@@ -390,18 +402,26 @@ def appropriate_workers(message):
             order = Order()
             user = User()
             title = message.reply_to_message.text.split("\n")[0].split(": ")[1]
-            print(title)
             order.get_by_title(title)
             category = order.get_category()["out"]
-            print(category)
+            user.get_from_tg_id(message.from_user.id)
             workers = user.get_all_users(category)
-            print(workers)
             if workers["status"] == "ok":
-                pass
+                w_data = workers["out"]
+                rater = lambda x: (x[-1] / 10 +
+                                   meaning_rating.Similarity(model, index2word_set).sim([order.get_worker_skills()["out"], x[5]]) +
+                                   activity_time_rating.task_completion(user.get_user_by_id(x[0])["out"].get_ml_data()["out"][0], user.get_user_by_id(x[0])["out"].get_ml_data()["out"][1], [[x[-2], order.get_time()["out"]]])) / 3
 
+                w_data = sorted(w_data, key=rater, reverse=True)
+                print(w_data)
+                r = 15 if len(w_data) > 15 else len(w_data)
+                for i in range(r):
+                    sentence = f"Работник: @{w_data[i][1]}\nИмя: {w_data[i][3]}\nФамилия: {w_data[i][4]}\nНавыки: {w_data[i][5]}\nНачало работы: {w_data[i][7]} г."
+                    return sentence
 
             elif workers["status"] == "no workers found":
                 return "Нет походящих работниклов ддля вашего заказа"
+        return "Простите, я Вас не понимаю!"
 
 @bot.message_handler(commands=["find_worker"])
 def find_worker(message):
@@ -412,8 +432,8 @@ def find_worker(message):
         orders = user.find_worker_data()
         if orders['status'] == "ok":
             data = user.find_worker_data()["out"]
+            bot.send_message(message.from_user.id, "Это-ваши активные заказы.\nОтветьте '+' (без ковычек) на сообщение с закаком, для которого вы хотели бы нации работника")
             for i in data:
-                print(i)
                 bot.send_message(message.from_user.id,
                                  f"Название: {i[3]}\nОписание заказа: {i[4]}\nВремя на выполнение: {i[10]}\nТребуемые навыки: {i[6]}")
                 global flags
@@ -426,34 +446,56 @@ def find_worker(message):
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
 
+# def agree(message):
+
+
+
 @bot.message_handler(content_types=["text"])
 def text(message):
-    global employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f
     global flags
     print(flags)
-    if employer_flag or mixed_flag:
+    if flags[0] or flags[1]:
         out = registration_reply(message)
         bot.send_message(message.from_user.id, out)
         for i in range(len(flags)):
             flags[i] = False
+        return
 
-    if create_order_f:
+    if flags[2]:
         out = add_order_reply(message)
         bot.send_message(message.from_user.id, out)
         for i in range(len(flags)):
             flags[i] = False
+        return
 
     if flags[3]:
         print("-----------")
         out = appropriate_workers(message)
-        for i in range(len(flags)):
-            flags[i] = False
-
-    if flags[-1]:
-        out = work_application(message)
         bot.send_message(message.from_user.id, out)
         for i in range(len(flags)):
             flags[i] = False
+        flags[5] = True
+        return
+
+    if flags[4]:
+        work_application(message)
+        for i in range(len(flags)):
+            flags[i] = False
+        return
+
+    if flags[5]:
+        print("немного зашло")
+        print(message.reply_to_message.text)
+        if message.reply_to_message.text[0] == "Р":
+            print("Зашлоооооооооо")
+            out = hire(message)
+            bot.send_message(message.from_user.id, out)
+        for i in range(len(flags)):
+            flags[i] = False
+        return
+
+    # if message.from_user.text == "+":
+    #     pass
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_buttons(call):

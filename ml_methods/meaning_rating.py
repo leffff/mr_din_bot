@@ -10,7 +10,6 @@ from nltk.corpus import stopwords
 from string import punctuation
 
 path = join("/".join(getcwd().split("/")) + "/ml/russian_database")
-print(path)
 model = Word2VecKeyedVectors.load(path)
 STOPWORDS = stopwords.words("russian")
 index2word_set = set(model.index2word)
@@ -65,10 +64,10 @@ class Similarity:
         return sim
 
 
-# comparison = ['пистолет', 'яблоко']
-#
-# s = Similarity(model, index2word_set)
-# print(s.sim(comparison), "sim")
+comparison = ['apple', 'яблоко']
+
+s = Similarity(model, index2word_set)
+print(s.sim(comparison), "sim")
 
 # sim = 1 - spatial.distance.cosine(s1_afv, s2_afv)
 # print(sim)

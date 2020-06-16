@@ -28,6 +28,11 @@ path = join("/".join(getcwd().split("/")) + "/ml/russian_database")
 print(path)
 model = Word2VecKeyedVectors.load(path)
 STOPWORDS = stopwords.words("russian")
+for word in STOPWORDS:
+    try:
+        swearings.remove(word)
+    except KeyError:
+        pass
 index2word_set = set(model.index2word)
 moprh = MorphAnalyzer()
 
@@ -48,8 +53,8 @@ first_db_creation()
 
 bot = telebot.TeleBot(TOKEN)
 
-employer_flag, mixed_flag, create_order, find_worker, find_work = False, False, False, False, False
-flags = [employer_flag, mixed_flag, create_order, find_worker, find_work]
+employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f = False, False, False, False, False
+flags = [employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f]
 
 categories = {
     "Дизайн": False,
@@ -66,7 +71,7 @@ categories = {
 def censor_checker(phrase):
     for word in phrase.split():
         if word.lower() in swearings:
-            return f'В заявке присутствует нецензурная лексика: "{word}".\nВоспользуйтесь коммандой /register заново.'
+            return f'В заявке присутствует нецензурная лексика: "{word}".\nВоспользуйтесь коммандой заново.'
     return ""
 
 
@@ -164,7 +169,6 @@ def start(message):
     bot.send_message(message.from_user.id, '*bold text* \n *bold again* - dsf', parse_mode='Markdown')
 
 
-
 @bot.message_handler(commands=['help'])
 def help(message):
     bot.send_message(message.from_user.id,
@@ -216,7 +220,6 @@ def cabinet(message):
         user.get_from_tg_id(message.from_user.id)
 
         if user.get_qualification()["out"] == "работодатель":
-
             name = user.get_name()["out"]
             surname = user.get_surname()["out"]
 
@@ -279,10 +282,12 @@ def my_orders(message):
                 else:
                     worker = ""
                 bot.send_message(message.from_user.id,
-                                 f"*Название:* {i.title}\n*Описание:* {i.get_description()['out']}\n*Продолжительность:* {i.get_time()['out']} дня\n*Активно:* {active}{worker}", parse_mode="Markdown")
+                                 f"*Название:* {i.title}\n*Описание:* {i.get_description()['out']}\n*Продолжительность:* {i.get_time()['out']} дня\n*Активно:* {active}{worker}",
+                                 parse_mode="Markdown")
             bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
         elif orders["status"] == "no orders found":
-            bot.send_message(message.from_user.id, "У вас пока нет заказов.\nДля добавления заказа передите в /add_order.")
+            bot.send_message(message.from_user.id,
+                             "У вас пока нет заказов.\nДля добавления заказа передите в /add_order.")
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
 
@@ -313,10 +318,12 @@ def my_works(message):
                     user.get_user_by_id(employer_id)
                     employer = f"\n*Никнейм Работодателя:* @{user.get_tg_nickname()}"
                     bot.send_message(message.from_user.id,
-                                     f"*Название:* {i.title}\n*Описание:* {i.get_description()['out']}\n*Продолжительность:* {i.get_time()['out']} дня\n*Активно:* {active}{employer}\n*Категория:* {i.get_category()['out']}{mark}{feedback}", parse_mode="Markdown")
+                                     f"*Название:* {i.title}\n*Описание:* {i.get_description()['out']}\n*Продолжительность:* {i.get_time()['out']} дня\n*Активно:* {active}{employer}\n*Категория:* {i.get_category()['out']}{mark}{feedback}",
+                                     parse_mode="Markdown")
                 bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
             elif orders["status"] == "no works found":
-                bot.send_message(message.from_user.id, "У вас пока нет работ. Для поиска работы парейдите в /find_work.")
+                bot.send_message(message.from_user.id,
+                                 "У вас пока нет работ. Для поиска работы парейдите в /find_work.")
         else:
             bot.send_message(message.from_user.id,
                              "Вы не мождете просмотриеть свои работы, так как Вы зарегистрированы, как заказчик.")
@@ -348,7 +355,8 @@ def find_work(message):
                     for i in data)
                 for i in work:
                     bot.send_message(message.from_user.id, i, parse_mode="Markdown")
-                bot.send_message(message.from_user.id, "Чтобы начать выполнение заказа ответьте на выбранный заказ '+' (без ковычек).")
+                bot.send_message(message.from_user.id,
+                                 "Чтобы начать выполнение заказа ответьте на выбранный заказ '+' (без ковычек).")
             else:
                 bot.send_message(message.from_user.id,
                                  "Нет подходящих заказов")
@@ -375,11 +383,44 @@ def work_application(message):
         else:
             return "Извините, я вас не понимаю."
 
+
+def appropriate_workers(message):
+    if message.reply_to_message is not None:
+        if message.text == "+":
+            order = Order()
+            user = User()
+            title = message.reply_to_message.text.split("\n")[0].split(": ")[1]
+            print(title)
+            order.get_by_title(title)
+            category = order.get_category()["out"]
+            print(category)
+            workers = user.get_all_users(category)
+            print(workers)
+            if workers["status"] == "ok":
+                pass
+
+
+            elif workers["status"] == "no workers found":
+                return "Нет походящих работниклов ддля вашего заказа"
+
 @bot.message_handler(commands=["find_worker"])
 def find_worker(message):
     status = user_in_db(message)
     if status == "ok":
         user = User()
+        user.get_from_tg_id(message.from_user.id)
+        orders = user.find_worker_data()
+        if orders['status'] == "ok":
+            data = user.find_worker_data()["out"]
+            for i in data:
+                print(i)
+                bot.send_message(message.from_user.id,
+                                 f"Название: {i[3]}\nОписание заказа: {i[4]}\nВремя на выполнение: {i[10]}\nТребуемые навыки: {i[6]}")
+                global flags
+                flags[3] = True
+
+        elif orders["staus"] == "no orders found":
+            bot.send_message(message.from_user.id, "У Вас пока нет заказов для поиска работников!")
 
     else:
         bot.send_message(message.from_user.id, "Сначала Вам нужно зарегистрироваться!\nВоспользуйтесь /register")
@@ -387,32 +428,39 @@ def find_worker(message):
 
 @bot.message_handler(content_types=["text"])
 def text(message):
-    global employer_flag, mixed_flag, create_order, find_worker, find_work
+    global employer_flag, mixed_flag, create_order_f, find_worker_f, find_work_f
     global flags
     print(flags)
     if employer_flag or mixed_flag:
         out = registration_reply(message)
         bot.send_message(message.from_user.id, out)
-        employer_flag, mixed_flag = False, False
+        for i in range(len(flags)):
+            flags[i] = False
 
-    if create_order:
+    if create_order_f:
         out = add_order_reply(message)
         bot.send_message(message.from_user.id, out)
+        for i in range(len(flags)):
+            flags[i] = False
 
-    if find_worker:
-        pass
+    if flags[3]:
+        print("-----------")
+        out = appropriate_workers(message)
+        for i in range(len(flags)):
+            flags[i] = False
 
     if flags[-1]:
         out = work_application(message)
         bot.send_message(message.from_user.id, out)
-
+        for i in range(len(flags)):
+            flags[i] = False
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_buttons(call):
     id = call.message.chat.id
     user = User()
     status = user.get_from_tg_id(id)["status"]
-    global employer_flag, mixed_flag, create_order, find_work, find_worker
+    global employer_flag, mixed_flag, create_order_f, find_work_f, find_worker_f
 
     if status == "user not found":
         if call.data == 'employer':
@@ -442,18 +490,20 @@ def callback_buttons(call):
 
         elif call.data in list(categories.keys()):
             bot.send_message(call.message.chat.id,
-                             "Для завершения регистрации отправьте сообщение в формате:\n\n*ИМЯ*\n\n*ФАМИЛИЯ*\n\n*ДАТА НАЧАЛА РАБОТЫ (ГГГГ)*\n\n*НАВЫКИ, ТЕХНОГОЛИИ И УМЕНИЯ*", parse_mode="Markdown")
+                             "Для завершения регистрации отправьте сообщение в формате:\n\n*ИМЯ*\n\n*ФАМИЛИЯ*\n\n*ДАТА НАЧАЛА РАБОТЫ (ГГГГ)*\n\n*НАВЫКИ, ТЕХНОГОЛИИ И УМЕНИЯ*",
+                             parse_mode="Markdown")
             bot.send_message(call.message.chat.id, 'Вы будете зарегистрированы, как работник')
             categories[call.data] = True
 
     if status == "ok":
         if call.data in list(categories.keys()):
             bot.send_message(call.message.chat.id,
-                             "Для создания заказа отправьте сообщение в формате:\n\n*НАЗВАНИЕ ЗАКАЗА*\n\n*ДЛИТЕЛЬНОСТЬ ВЫПОЛНЕНИЯ В ДНЯХ*\n\n*ОПИСАНИЕ ЗАКАЗА*\n\n*ТРЕБУЕМЫЕ КАЧЕСТВА И КВАЛИФИКАЦИИ ОТ РАБОТНИКА*", parse_mode="Markdown")
+                             "Для создания заказа отправьте сообщение в формате:\n\n*НАЗВАНИЕ ЗАКАЗА*\n\n*ДЛИТЕЛЬНОСТЬ ВЫПОЛНЕНИЯ В ДНЯХ*\n\n*ОПИСАНИЕ ЗАКАЗА*\n\n*ТРЕБУЕМЫЕ КАЧЕСТВА И КВАЛИФИКАЦИИ ОТ РАБОТНИКА*",
+                             parse_mode="Markdown")
             categories[call.data] = True
             for i in range(len(flags)):
                 flags[i] = False
-            create_order = True
+            create_order_f = True
 
 
 def add_order_reply(message):

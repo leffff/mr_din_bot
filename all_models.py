@@ -302,14 +302,14 @@ class User:
                         user.get_from_tg_id(tg_id)
                         user_id = user.get_user_id()["out"]
                         cursor.execute("SELECT mark FROM orders WHERE worker_id = ? AND mark IS NOT NULL", (user_id,))
-                        out = cursor.fetchall()
-                        if out:
+                        m = cursor.fetchall()
+                        if m:
                             conn.commit()
-                            avg_mark = round(sum(out) / len(out), 2)
+                            avg_mark = round(sum(m) / len(m), 2)
                         else:
                             avg_mark = 5
                         worker.append(avg_mark)
-                        return {"status": "ok", "out": out}
+                    return {"status": "ok", "out": out}
                 return {"status": "no workers found"}
         except Exception as ex:
             return {"status": ex.args[0]}

@@ -16,6 +16,7 @@ STOPWORDS = stopwords.words("russian")
 index2word_set = set(model.index2word)
 moprh = MorphAnalyzer()
 
+print(STOPWORDS)
 
 class Similarity:
     def __init__(self, model, index2word_set, num_features=300):

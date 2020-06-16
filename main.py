@@ -66,7 +66,7 @@ categories = {
 def censor_checker(phrase):
     for word in phrase.split():
         if word.lower() in swearings:
-            return f'В заявке присутствует нецензурная лексика: "{word}"\nВоспользуйтесь коммандой /register заново'
+            return f'В заявке присутствует нецензурная лексика: "{word}".\nВоспользуйтесь коммандой /register заново.'
     return ""
 
 
@@ -89,12 +89,12 @@ def registration_reply(message):
             registration = {"tg_id": message.from_user.id, "tg_nickname": message.from_user.username}
 
             if not sentence[0].isalpha():
-                return f"Имя должно состоять только из букв"
+                return "Имя должно состоять только из букв.\nВоспользуйтесь коммандой /register заново."
             if len(censor_checker(sentence[0])) != 0:
                 return censor_checker(sentence[0])
 
             if not sentence[1].isalpha():
-                return "Фамилия должна состоять только из букв"
+                return "Фамилия должна состоять только из букв.\nВоспользуйтесь коммандой /register заново."
             if len(censor_checker(sentence[1])) != 0:
                 return censor_checker(sentence[1])
 
@@ -107,8 +107,9 @@ def registration_reply(message):
                 start_date = sentence[2]
                 if len(start_date) == 4 and start_date.isdigit():
                     if 1960 > int(start_date) or int(start_date) > datetime.today().year:
-                        return f"Год начала работв не может быт меньшк 1960 и больше {datetime.today().year}"
-
+                        return f"Год начала работв не может быт меньшк 1960 и больше {datetime.today().year}.\nВоспользуйтесь коммандой /register заново."
+                else:
+                    return "Введите корректную дату.\nВоспользуйтесь коммандой /register заново."
                 if len(censor_checker(sentence[2])) != 0:
                     return censor_checker(sentence[2])
 
@@ -135,7 +136,7 @@ def registration_reply(message):
 
                 return "Вы успешно зарегистрированы!\nДля дальнейших действий передите в /cabinet"
             else:
-                return "Проверьте, правдлильно ли Вы ввели все данные"
+                return "Проверьте, правильно ли Вы ввели все данные.\nВоспользуйтесь коммандой /register заново."
         elif status == "ok":
             employer_flag = False
             mixed_flag = False
@@ -143,7 +144,7 @@ def registration_reply(message):
         else:
             "Произошла ошибка, пожалуйста попробуйте позже"
     else:
-        return "Проверьте, что ввели все данные!\n\nPS: Используйте Shift + Enter чтобы перенести курсор на следующую строчку, если вы работаете с компьютера."
+        return "Проверьте, что ввели все данные!.\nВоспользуйтесь коммандой /register заново.\n\nPS: Используйте Shift + Enter чтобы перенести курсор на следующую строчку, если вы работаете с компьютера."
 
 
 @bot.message_handler(commands=['echo'])
@@ -231,6 +232,7 @@ def cabinet(message):
     else:
         bot.send_message(message.from_user.id,
                          "Приносим извенения! Произошли неполадки! Мы уже работаем над их устранением")
+
 
 @bot.message_handler(commands=["add_order"])
 def add_order(message):
@@ -333,7 +335,9 @@ def find_work(message):
 
                 data = sorted(raw_data, key=mean_sorter)
 
-                work = tuple(f"Заказчик: @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\nНазвание: {i[3]}\nОписание: {i[4]}\nКатегория: {i[5]}\nНавыки: {i[6]}\nВремя на выполнение: {i[10]}" for i in data)
+                work = tuple(
+                    f"Заказчик: @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\nНазвание: {i[3]}\nОписание: {i[4]}\nКатегория: {i[5]}\nНавыки: {i[6]}\nВремя на выполнение: {i[10]}"
+                    for i in data)
                 for i in work:
                     bot.send_message(message.from_user.id, i)
             else:
@@ -357,7 +361,6 @@ def work_application(message):
             if out == "ok":
                 return "Вы приступили к выполнению задания! Удачи!"
             return "Я устал, дайте отдохнуть!"
-
 
 
 @bot.message_handler(commands=["find_worker"])
@@ -391,7 +394,6 @@ def text(message):
         print("---------------------------")
         out = work_application(message)
         bot.send_message(message.from_user.id, out)
-
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -455,15 +457,15 @@ def add_order_reply(message):
             sentence[2] = "".join(sentence[2:])
 
             if len(sentence[0]) > 40 or len(sentence[0]) < 5:
-                return "Длина названия должна быть больше 5 и меньше 40 символов"
+                return "Длина названия должна быть больше 5 и меньше 40 символов.\nВоспользуйтесь коммандой /add_order заново."
             if len(censor_checker(sentence[0])) != 0:
                 return censor_checker(sentence[0])
             if not sentence[1].isdigit():
-                return "Длитеольность выполнения заказа должна састоять только из цифр"
+                return "Длитеольность выполнения заказа должна састоять только из цифр.\nВоспользуйтесь коммандой /add_order заново."
             if len(censor_checker(sentence[1])) != 0:
                 return censor_checker(sentence[1])
             if len(sentence[2]) < 30:
-                return "Слишком короткое описание заказа(оно должно быть больше 30 символов)"
+                return "Слишком короткое описание заказа(оно должно быть больше 30 символов.\nВоспользуйтесь коммандой /add_order заново."
             if len(censor_checker(sentence[2])) != 0:
                 return censor_checker(sentence[2])
 
@@ -487,9 +489,9 @@ def add_order_reply(message):
                 print(categories)
                 return "Заказ успешно добавлен"
             else:
-                return "Провьрьте, указали ли вы все требуемые данные!"
+                return "Провьрьте, указали ли вы все требуемые данные!\nВоспользуйтесь коммандой /add_order заново."
         else:
-            return "Провьрьте, указали ли вы все требуемые данные!"
+            return "Провьрьте, указали ли вы все требуемые данные!\nВоспользуйтесь коммандой /add_order заново."
 
 
 try:

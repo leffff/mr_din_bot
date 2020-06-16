@@ -43,7 +43,7 @@ def first_db_creation():
                            "active BOOLEAN DEFAULT True NOT NULL, "
                            "start_time REAL,"
                            "finish_time REAL,"
-                           "time INT,"
+                           "time INT NOT NULL,"
                            "mark INT,"
                            "feedback TEXT,"
                            "result INT,"

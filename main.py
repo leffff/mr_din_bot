@@ -76,14 +76,19 @@ def censor_checker(phrase):
     return ""
 
 
-def announcement():
-    user = User()
-    ids = user.get_all_tg_ids()["out"]
-    for i in ids:
-        bot.send_message(i, "Вышла новая версия @mr_din_bot !\nСпешите опробовать! Все функции готовы!")
-
-
-announcement()
+# def announcement():
+#     user = User()
+#     ids = user.get_all_tg_ids()["out"]
+#     print(ids)
+#     for i in ids:
+#         try:
+#             print(i[0])
+#             bot.send_message(i[0], "Вышла новая версия @mr_din_bot !\nСпешите опробовать! Все функции готовы!")
+#         except Exception:
+#             pass
+#
+#
+# announcement()
 
 
 def user_in_db(message):
@@ -388,10 +393,10 @@ def find_work(message):
                 data = sorted(raw_data, key=mean_sorter)
 
                 work = tuple(
-                    f"*Заказчик:* @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\n*Название:* {i[3]}\n*Описание:* {i[4]}\n*Категория:* {i[5]}\n*Навыки:* {i[6]}\n*Время на выполнение:* {i[10]}"
+                    f"Заказчик: @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\nНазвание: {i[3]}\nОписание: {i[4]}\nКатегория: {i[5]}\nНавыки: {i[6]}\nВремя на выполнение: {i[10]}"
                     for i in data)
                 for i in work:
-                    bot.send_message(message.from_user.id, i, parse_mode="Markdown")
+                    bot.send_message(message.from_user.id, i)
                 bot.send_message(message.from_user.id,
                                  "Чтобы начать выполнение заказа ответьте на выбранный заказ '+' (без ковычек).")
             else:
@@ -466,7 +471,7 @@ def appropriate_workers(message):
                 for i in range(r):
                     user = User().get_user_by_nickname(w_data[i][1])["out"]
                     mark = user.get_avg_mark()["out"]
-                    sentence = f"*Работник:* @{w_data[i][1]}\n\n*Имя:* {w_data[i][3]}\n\n*Фамилия:* {w_data[i][4]}\n\n*Навыки:* {w_data[i][5]}\n\n*Рейтинг:* {mark}/10\n\n*Начало работы:* {w_data[i][7]} г."
+                    sentence = f"Работник: @{w_data[i][1]}\n\nИмя: {w_data[i][3]}\n\nФамилия: {w_data[i][4]}\n\nНавыки: {w_data[i][5]}\n\nРейтинг: {mark}/10\n\nНачало работы: {w_data[i][7]} г."
                     global task
                     task = message.reply_to_message.text
                     out.append(sentence)
@@ -512,7 +517,7 @@ def find_worker(message):
                 global flags
                 flags[3] = True
 
-        elif orders["staus"] == "no orders found":
+        elif orders["status"] == "no orders found":
             bot.send_message(message.from_user.id, "У Вас пока нет заказов для поиска работников!")
 
     else:

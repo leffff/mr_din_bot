@@ -184,16 +184,6 @@ def start(message):
                      "Чтобы узнать больше обо мне воспользуйтесь /help")
 
 
-@bot.message_handler(commands=['alive'])
-def alive(message):
-    while True:
-        bot.send_message(message.from_user.id,
-                         "Левы заснул, поэтому так")
-        bot.send_message(message.from_user.id,
-                         "/alive")
-        time.sleep(2)
-
-
 @bot.message_handler(commands=['help'])
 def help(message):
     print("help", message)
@@ -258,6 +248,7 @@ def cabinet(message):
             experience = user.get_experience()["out"]
             categories = user.get_category()["out"]
             qualification = user.get_qualification()["out"]
+            print(user.get_avg_mark())
             mark = user.get_avg_mark()["out"]
 
             output = f'*Имя* - {name}\n\n*Фамилия* - {surname}\n\n*Рейтинг:* {mark}/10\n\n*Опыт работы* - с {experience} года\n\n*Область* - {categories}\n\n*Умения, навыки* - {qualification}'
@@ -321,7 +312,9 @@ def my_orders(message):
                 print(i.get_category())
                 bot.send_message(message.from_user.id,
                                  f"Название: {i.title}\n\nОписание: {i.get_description()['out']}\n\nПродолжительность: {i.get_time()['out']} дня\n\nТребуемые навыки: {i.get_worker_skills()['out']}\n\nКатегория заказа: {i.get_category()['out']}\n\nАктивно: {active}{worker}",)
-                global my_orders_f
+                global my_orders_f, flags
+                for i in range(len(flags)):
+                    flags[i] = False
                 my_orders_f = True
             bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
         elif orders["status"] == "no orders found":
@@ -384,8 +377,6 @@ def find_work(message):
             order = Order()
             call = order.get_all_orders(user.get_category()["out"], user.get_user_id()["out"])
             if call["status"] == "ok":
-                global flags
-                flags[-1] = True
                 raw_data = call["out"]
                 s = meaning_rating.Similarity(model, index2word_set)
                 mean_sorter = lambda x: s.sim([x[6], user.get_qualification()["out"]])
@@ -393,12 +384,18 @@ def find_work(message):
                 data = sorted(raw_data, key=mean_sorter)
 
                 work = tuple(
-                    f"Заказчик: @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\nНазвание: {i[3]}\nОписание: {i[4]}\nКатегория: {i[5]}\nНавыки: {i[6]}\nВремя на выполнение: {i[10]}"
+                    f"Заказчик: @{User().get_user_by_id(i[1])['out'].get_tg_nickname()['out']}\n\nНазвание: {i[3]}\n\nОписание: {i[4]}\n\nКатегория: {i[5]}\n\nНавыки: {i[6]}\n\nВремя на выполнение: {i[10]}"
                     for i in data)
-                for i in work:
-                    bot.send_message(message.from_user.id, i)
                 bot.send_message(message.from_user.id,
                                  "Чтобы начать выполнение заказа ответьте на выбранный заказ '+' (без ковычек).")
+                for i in work:
+                    bot.send_message(message.from_user.id, i)
+                global flags
+                for i in range(len(flags)):
+                    flags[i] = False
+                flags[4] = True
+                print(flags[4], "flllllllaaaags[4]")
+
             else:
                 bot.send_message(message.from_user.id,
                                  "Нет подходящих заказов")
@@ -427,13 +424,16 @@ def work_application(message):
     print(message)
     if message.reply_to_message is not None:
         if message.text == "+":
+
             order = Order()
-            out = order.get_by_title(message.reply_to_message.text.split("\n")[1].split(": ")[1])
-            print(out)
+            out = order.get_by_title(message.reply_to_message.text.split("\n\n")[1].split(": ")[1])
+            print(out, "aaaaaaaeeeeeennnnnnnnn")
             worker = User()
             worker.get_from_tg_id(message.from_user.id)
             out = order.take_task(worker.get_user_id()["out"], time.time())["status"]
             if out == "ok":
+                user = User()
+                bot.send_message(user.get_user_by_id(order.get_employer_id()["out"])["out"].tg_id, f"Работник приступил к выполнению заказа! Под названием '{order.title}', Работник: @{message.from_user.username}")
                 return "Вы приступили к выполнению задания! Удачи!\nДля дальнейших действий передите в /help. "
             return "Я устал, дайте отдохнуть!"
         else:
@@ -450,6 +450,7 @@ def appropriate_workers(message):
             user = User()
             title = message.reply_to_message.text.split("\n")[0].split(": ")[1]
             order.get_by_title(title)
+            print(order.get_category(), "---------")
             category = order.get_category()["out"]
             user.get_from_tg_id(message.from_user.id)
             workers = user.get_all_users(category)
@@ -515,6 +516,8 @@ def find_worker(message):
                 bot.send_message(message.from_user.id,
                                  f"Название: {i[3]}\n\nОписание заказа: {i[4]}\n\nВремя на выполнение: {i[10]} дня\n\nКатегория: {i[5]}\n\nТребуемые навыки: {i[6]}",)
                 global flags
+                for i in range(len(flags)):
+                    flags[i] = False
                 flags[3] = True
 
         elif orders["status"] == "no orders found":
@@ -606,8 +609,10 @@ def text(message):
         return
 
     if flags[4]:
+        print("YYYYYYYYYYYY")
         global task
-        work_application(message)
+        out = work_application(message)
+        bot.send_message(message.from_user.id,  out)
         for i in range(len(flags)):
             flags[i] = False
         task = ""

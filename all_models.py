@@ -192,8 +192,11 @@ class User:
                 user_id = self.get_user_id()["out"]
                 cursor.execute("SELECT mark FROM orders WHERE worker_id = ? AND mark IS NOT NULL", (user_id,))
                 out = cursor.fetchall()
+                print(out)
                 if out:
                     conn.commit()
+                    parser = lambda x:  x[0]
+                    out = list(map(parser, out))
                     avg_mark = round(sum(out) / len(out), 2)
                     return {'status': "ok", "out": avg_mark}
                 return {"status": "no marks found", "out": 5}

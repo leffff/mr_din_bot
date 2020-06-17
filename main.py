@@ -168,14 +168,16 @@ def start(message):
                      "абсолютно бесплатно. Do It Now.\n"
                      "Чтобы узнать больше обо мне воспользуйтесь /help")
 
+
 @bot.message_handler(commands=['alive'])
 def alive(message):
     while True:
         bot.send_message(message.from_user.id,
-                     "Левы заснул, поэтому так")
+                         "Левы заснул, поэтому так")
         bot.send_message(message.from_user.id,
                          "/alive")
         time.sleep(2)
+
 
 @bot.message_handler(commands=['help'])
 def help(message):
@@ -288,17 +290,22 @@ def my_orders(message):
             bot.send_message(message.from_user.id,
                              "Чтобы закончить заказ, ответьте на сообщение с выбранным заказом в следующем формате:\n\n'+' или '-' (без ковычек, '+' если успешно, '-' если неуспешно)\n\nОЦЕНКА (от 0 до 10)\n\nОТЗЫВ О РАБОТНИКЕ")
             for i in orders["out"]:
-                active = "да" if i.get_active()['out'] else "нет"
-                if not i.get_active()['out']:
-                    user = User()
-                    id = i.get_worker_id()
-                    user.get_user_by_id(id)
-                    worker = f"\n\n*Работник:* @{user.get_tg_nickname()}"
+                print(i, "order my")
+                print(i.get_active()["status"])
+                active = "да" if i.get_active()['status'] == "ok" else "нет"
+                if i.get_worker_id()['status'] == "ok":
+                    user1 = User()
+                    id = i.get_worker_id()["out"]
+                    user = user1.get_user_by_id(id)["out"]
+                    worker = f"\n\nРаботник: @{user.get_tg_nickname()['out']}"
                 else:
-                    worker = "\n\n*Работник:* --------------"
+                    worker = "\n\nРаботник: --------------"
+                print(i.get_description())
+                print(i.get_time())
+                print(i.get_worker_skills())
+                print(i.get_category())
                 bot.send_message(message.from_user.id,
-                                 f"*Название:* {i.title}\n\n*Описание:* {i.get_description()['out']}\n\n*Продолжительность:* {i.get_time()['out']} дня\n\n*Требуемые навыки:* {i.get_worker_skills()['out']}\n\n*Категория заказа:* {i.get_category()['out']}\n\n*Активно:* {active}{worker}",
-                                 parse_mode="Markdown")
+                                 f"Название: {i.title}\n\nОписание: {i.get_description()['out']}\n\nПродолжительность: {i.get_time()['out']} дня\n\nТребуемые навыки: {i.get_worker_skills()['out']}\n\nКатегория заказа: {i.get_category()['out']}\n\nАктивно: {active}{worker}",)
                 global my_orders_f
                 my_orders_f = True
             bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
@@ -320,10 +327,10 @@ def my_works(message):
             orders = user.watch_my_works()
             if orders["status"] == "ok":
                 for i in orders["out"]:
-                    active = "да" if i.get_active()['out'] else "нет"
-                    if not i.get_active()['out']:
+                    active = "да" if i.get_active()['status'] == "ok" else "нет"
+                    if i.get_active()['status'] == "order finished":
                         if i.get_mark()["status"] == "ok":
-                            mark = f"\n\nОценка: {i.get_mark()['out']}"
+                            mark = f"\n\nОценка: {i.get_mark()['out']}/10"
                             feedback = f"\n\nОтзыв: {i.get_feedback()['out']}"
                         else:
                             mark = ""
@@ -336,7 +343,7 @@ def my_works(message):
                     print(employer_id)
                     employer1 = user.get_user_by_id(employer_id)["out"]
                     print(employer1)
-                    employer = f"\n\nНикнейм Работодателя: @{employer1.get_tg_nickname()['out']}"
+                    employer = f"\n\nРаботодатель: @{employer1.get_tg_nickname()['out']}"
                     bot.send_message(message.from_user.id,
                                      f"Название: {i.title}\n\nОписание: {i.get_description()['out']}\n\nПродолжительность: {i.get_time()['out']} дня\n\nАктивно: {active}{employer}\n\nКатегория: {i.get_category()['out']}{mark}{feedback}")
                 bot.send_message(message.from_user.id, "Для дальнейших действий передите в /help.")
@@ -517,9 +524,10 @@ def finish_order(message):
                     if out == "ok":
                         if message.text.split("\n\n")[1].isdigit():
                             if 0 <= int(message.text.split("\n\n")[1]) <= 10:
-
+                                print(message.text.split("\n\n")[2], int(message.text.split("\n\n")[1]))
                                 output = order.add_feedback_and_mark(message.text.split("\n\n")[2],
-                                                                     message.text.split("\n\n")[1])["status"]
+                                                                     int(message.text.split("\n\n")[1]))["status"]
+                                print(output, "output add_feedback")
                                 if output == "ok":
                                     return "Заказ завершён.\nДля дальнейщих дейсвий перейдите в /help"
 
@@ -533,6 +541,7 @@ def finish_order(message):
                             order.set_active_true()
                             return "Оценка может быть только числом."
                     else:
+                        order.set_active_true()
                         return "Извините, но даже ботам нужно отдыхать. Zzz.."
                 else:
                     return "Заказ уже завершён"
@@ -573,6 +582,7 @@ def text(message):
         return
 
     if flags[4]:
+        global task
         work_application(message)
         for i in range(len(flags)):
             flags[i] = False
@@ -613,6 +623,7 @@ def callback_buttons(call):
             for i in range(len(flags)):
                 flags[i] = False
             flags[0] = True
+            print(flags, "employer")
 
         elif call.data == 'mixed':
             keyboard = types.InlineKeyboardMarkup(True)
@@ -630,6 +641,7 @@ def callback_buttons(call):
             for i in range(len(flags)):
                 flags[i] = False
             flags[1] = True
+            print(flags, "mixed")
 
         elif call.data in list(categories.keys()):
             bot.send_message(call.message.chat.id,

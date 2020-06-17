@@ -823,6 +823,7 @@ class Order:
                 cursor = conn.cursor()
                 cursor.execute("UPDATE orders SET active = ? WHERE title = ?", (True, self.title))
                 conn.commit()
+                return {"status": "ok"}
         except Exception as ex:
             return {'status': ex.args[0]}
         finally:
@@ -874,7 +875,7 @@ class Order:
                 cursor.execute("UPDATE orders SET feedback = ?, mark = ? WHERE title = ?",
                                (feedback, mark, self.title))
                 conn.commit()
-                return {"result": "ok"}
+                return {"status": "ok"}
         except Exception as ex:
             return {'status': ex.args[0]}
         finally:

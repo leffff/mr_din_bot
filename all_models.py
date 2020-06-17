@@ -11,6 +11,21 @@ DBNAME = getenv("DBNAME")
 # Класс для взаимодействия с пользователями
 class User:
 
+    def get_all_tg_ids(self):
+        try:
+            with sqlite3.connect(DBNAME) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT tg_id FROM users")
+                out = cursor.fetchall()
+                if out:
+                    conn.commit()
+                    return {'status': "ok", "out": out}
+                return {"status": "error in query, result = False"}
+        except Exception as ex:
+            return {'status': ex.args[0]}
+        finally:
+            conn.close()
+
     def get_from_tg_id(self, tg_id: int) -> dict:
         """
         Инициализация объекта класса и проверка есть ли пользователь с данным tg_id в базе данных

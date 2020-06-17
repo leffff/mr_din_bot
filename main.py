@@ -76,6 +76,16 @@ def censor_checker(phrase):
     return ""
 
 
+def announcement():
+    user = User()
+    ids = user.get_all_tg_ids()["out"]
+    for i in ids:
+        bot.send_message(i, "Вышла новая версия @mr_din_bot !\nСпешите опробовать! Все функции готовы!")
+
+
+announcement()
+
+
 def user_in_db(message):
     id = message.from_user.id
     user = User()
@@ -426,8 +436,10 @@ def work_application(message):
 
 
 def appropriate_workers(message):
-    print(message)
+    print(message.text, "1234567890987654321")
+    print(message.reply_to_message, "жжжжжжжжжжжжжжжжжжжжжжжж")
     if message.reply_to_message is not None:
+        print(message.reply_to_message.text, "qwertyuiolkjhgfdewr5t6yuikbfdertyui")
         if message.text == "+":
             order = Order()
             user = User()
@@ -477,6 +489,9 @@ def agree(message):
         print(user)
         order.take_task(user.get_user_id()["out"], time.time())
         bot.send_message(message.from_user.id, "Вы начали работу над заказом!")
+        emp_id = order.get_employer_id()["out"]
+        employer = user.get_user_by_id(emp_id)["out"].tg_id
+        bot.send_message(employer, f"Работник приступил к выполнению заказа с названием '{order.title}'")
 
 
 @bot.message_handler(commands=["find_worker"])
@@ -493,8 +508,7 @@ def find_worker(message):
                              "Это-ваши активные заказы.\n\nОтветьте '+' (без ковычек) на сообщение с закаком, для которого вы хотели бы нации работника")
             for i in data:
                 bot.send_message(message.from_user.id,
-                                 f"*Название:* {i[3]}\n\n*Описание заказа:* {i[4]}\n\n*Время на выполнение:* {i[10]} дня\n\n*Категория*: {i[5]}\n\n*Требуемые навыки:* {i[6]}",
-                                 parse_mode="Markdown")
+                                 f"Название: {i[3]}\n\nОписание заказа: {i[4]}\n\nВремя на выполнение: {i[10]} дня\n\nКатегория: {i[5]}\n\nТребуемые навыки: {i[6]}",)
                 global flags
                 flags[3] = True
 
@@ -529,6 +543,11 @@ def finish_order(message):
                                                                      int(message.text.split("\n\n")[1]))["status"]
                                 print(output, "output add_feedback")
                                 if output == "ok":
+                                    user = User()
+                                    mark = order.get_mark()["out"]
+                                    feed_back = order.get_feedback()["out"]
+                                    title = order.title
+                                    bot.send_message(user.get_user_by_id(order.get_worker_id()["out"])["out"].tg_id, f"Работодатель завершил заказ '{title}'\n\nОценка: {mark}/10\n\nОтзыв: {feed_back}")
                                     return "Заказ завершён.\nДля дальнейщих дейсвий перейдите в /help"
 
                                 else:

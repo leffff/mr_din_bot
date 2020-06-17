@@ -311,7 +311,7 @@ def my_orders(message):
                 print(i.get_worker_skills())
                 print(i.get_category())
                 bot.send_message(message.from_user.id,
-                                 f"Название: {i.title}\n\nОписание: {i.get_description()['out']}\n\nПродолжительность: {i.get_time()['out']} дня\n\nТребуемые навыки: {i.get_worker_skills()['out']}\n\nКатегория заказа: {i.get_category()['out']}\n\nАктивно: {active}{worker}",)
+                                 f"Название: {i.title}\n\nОписание: {i.get_description()['out']}\n\nПродолжительность: {i.get_time()['out']} дня\n\nТребуемые навыки: {i.get_worker_skills()['out']}\n\nКатегория заказа: {i.get_category()['out']}\n\nАктивно: {active}{worker}", )
                 global my_orders_f, flags
                 for i in range(len(flags)):
                     flags[i] = False
@@ -408,7 +408,7 @@ def find_work(message):
 
 
 def hire(message):
-    print(message)
+    print("hiiiiiiiiiiiiiirrrrrreeeeee")
     if message.reply_to_message is not None:
         if message.text == "+":
             tg_nickname = message.reply_to_message.text[11:].split("\n")[0]
@@ -433,7 +433,8 @@ def work_application(message):
             out = order.take_task(worker.get_user_id()["out"], time.time())["status"]
             if out == "ok":
                 user = User()
-                bot.send_message(user.get_user_by_id(order.get_employer_id()["out"])["out"].tg_id, f"Работник приступил к выполнению заказа! Под названием '{order.title}', Работник: @{message.from_user.username}")
+                bot.send_message(user.get_user_by_id(order.get_employer_id()["out"])["out"].tg_id,
+                                 f"Работник приступил к выполнению заказа! Под названием '{order.title}', Работник: @{message.from_user.username}")
                 return "Вы приступили к выполнению задания! Удачи!\nДля дальнейших действий передите в /help. "
             return "Я устал, дайте отдохнуть!"
         else:
@@ -514,7 +515,7 @@ def find_worker(message):
                              "Это-ваши активные заказы.\n\nОтветьте '+' (без ковычек) на сообщение с закаком, для которого вы хотели бы нации работника")
             for i in data:
                 bot.send_message(message.from_user.id,
-                                 f"Название: {i[3]}\n\nОписание заказа: {i[4]}\n\nВремя на выполнение: {i[10]} дня\n\nКатегория: {i[5]}\n\nТребуемые навыки: {i[6]}",)
+                                 f"Название: {i[3]}\n\nОписание заказа: {i[4]}\n\nВремя на выполнение: {i[10]} дня\n\nКатегория: {i[5]}\n\nТребуемые навыки: {i[6]}", )
                 global flags
                 for i in range(len(flags)):
                     flags[i] = False
@@ -555,7 +556,8 @@ def finish_order(message):
                                     mark = order.get_mark()["out"]
                                     feed_back = order.get_feedback()["out"]
                                     title = order.title
-                                    bot.send_message(user.get_user_by_id(order.get_worker_id()["out"])["out"].tg_id, f"Работодатель завершил заказ '{title}'\n\nОценка: {mark}/10\n\nОтзыв: {feed_back}")
+                                    bot.send_message(user.get_user_by_id(order.get_worker_id()["out"])["out"].tg_id,
+                                                     f"Работодатель завершил заказ '{title}'\n\nОценка: {mark}/10\n\nОтзыв: {feed_back}")
                                     return "Заказ завершён.\nДля дальнейщих дейсвий перейдите в /help"
 
                                 else:
@@ -605,14 +607,16 @@ def text(message):
             bot.send_message(message.from_user.id, i, parse_mode="Markdown")
         for i in range(len(flags)):
             flags[i] = False
+        my_orders_f = False
         flags[5] = True
+        print(flags[5], "Флаааааг для хаеееррррааа")
         return
 
     if flags[4]:
         print("YYYYYYYYYYYY")
         global task
         out = work_application(message)
-        bot.send_message(message.from_user.id,  out)
+        bot.send_message(message.from_user.id, out)
         for i in range(len(flags)):
             flags[i] = False
         task = ""

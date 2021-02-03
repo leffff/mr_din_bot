@@ -1,0 +1,12 @@
+python-dotenv
+sklearn
+six
+gensim
+pysqlite3
+nltk
+numpy
+scipy
+requests
+pymorphy2
+pyTelegramBotAPI
+bs4
